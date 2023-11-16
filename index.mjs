@@ -6,7 +6,7 @@ const inputUrl = process.argv[2];
 
 const savePath = 'video-dl';
 
-// await $`yt-dlp --output ${savePath} ${inputUrl}`;
+await $`yt-dlp --output ${savePath} ${inputUrl}`;
 
 let [ videoFile ]= await glob(`${savePath}.*`);
 
