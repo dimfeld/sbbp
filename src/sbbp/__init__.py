@@ -1,5 +1,4 @@
 #!/usr/bin/eny python3
-from pprint import pp
 import json
 import sys
 import torch
@@ -40,4 +39,4 @@ def run():
 
     result = pipe(sys.argv[1])
 
-    pp(json.dumps(result))
+    print(json.dumps(result["chunks"], indent=2))
