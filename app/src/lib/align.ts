@@ -1,7 +1,11 @@
 import type { TranscriptChunk, Video, ViewerChunk } from './types';
 
 export function align(config: Video, inputText: TranscriptChunk[]) {
-  const { imageInterval, numImages, title } = config;
+  const {
+    images: { interval: imageInterval, maxIndex: maxImageIndex },
+  } = config;
+
+  const numImages = maxImageIndex + 1;
 
   const imageTimestamp = (index: number) => {
     return index * imageInterval;

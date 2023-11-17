@@ -19,7 +19,10 @@ export interface Video {
   title: string;
   originalVideoPath: string;
   processedPath: string;
-  numImages: number;
-  imageInterval: number;
+  images: {
+    maxIndex: number;
+    removed: number[];
+    interval: number;
+  };
   duration: number;
 }

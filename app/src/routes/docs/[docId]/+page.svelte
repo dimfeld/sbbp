@@ -4,23 +4,29 @@
 
   export let data;
 
+  $: removed = new Set(data.item.images.removed);
   $: aligned = align(data.item, data.text);
-  $: console.log(aligned);
 
   function imageRange([start, end]: number[]) {
     if (start == end) {
-      return [start];
+      if (removed.has(start)) {
+        return [];
+      } else {
+        return [start];
+      }
     } else {
-      return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+      return Array.from({ length: end - start + 1 }, (_, i) => start + i).filter(
+        (i) => !removed.has(i)
+      );
     }
   }
 </script>
 
-<main class="p-4">
+<main class="p-4 mx-auto flex flex-col items-center">
   <div class="flex flex-col">
-    <h1>{data.item.title}</h1>
+    <h1 class="text-xl">{data.item.title}</h1>
   </div>
-  <div class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2">
+  <div class="grid grid-cols-[auto] gap-x-4 gap-y-2 mt-4 font-serif">
     {#each aligned as chunk}
       <div class="max-w-[65ch]">{chunk.text}</div>
       <div class="flex flex-col gap-2 max-w-lg">

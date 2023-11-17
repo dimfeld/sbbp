@@ -9,12 +9,15 @@ dependencies = [
     "transformers>=4.35.2",
     "torch>=2.1.1",
     "accelerate>=0.24.1",
+    "scikit-image>=0.21.0",
+    "opencv-python>=4.8.1.78",
 ]
 readme = "README.md"
 requires-python = ">= 3.8"
 
 [project.scripts]
-whisper = "sbbp:run"
+whisper = "sbbp.whisper:run"
+compare-images = "sbbp.compare_images:run"
 
 [build-system]
 requires = ["hatchling"]

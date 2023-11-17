@@ -54,7 +54,7 @@ export async function loadNewItem(file: string): Promise<Video | null> {
 
   const itemConfigPath = path.join(contentDir, 'sbbp.json');
   const itemConfigData = await fs.readFile(itemConfigPath);
-  const itemConfig = JSON.parse(itemConfigData.toString());
+  const itemConfig: Omit<Video, 'id'> = JSON.parse(itemConfigData.toString());
 
   const id = config.items.reduce((acc, item) => Math.max(acc, item.id), 0) + 1;
 
@@ -63,8 +63,7 @@ export async function loadNewItem(file: string): Promise<Video | null> {
     title: itemConfig.title,
     originalVideoPath: itemConfig.originalVideoPath,
     processedPath: contentDir,
-    imageInterval: itemConfig.imageInterval,
-    numImages: itemConfig.numImages,
+    images: itemConfig.images,
     duration: itemConfig.duration,
   };
 
@@ -99,7 +98,7 @@ export function loadImage(docId: number, id: number) {
     return null;
   }
 
-  if (id >= item.numImages) {
+  if (id > item.images.maxIndex) {
     return null;
   }
 

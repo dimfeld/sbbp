@@ -1,12 +1,15 @@
 import { expect, test } from 'vitest';
 import { align } from './align';
-import type { TranscriptChunk, Video, ViewerConfig } from './types';
+import type { TranscriptChunk, Video } from './types';
 
 test('single chunk', () => {
   const config: Video = {
     title: 'test',
-    imageInterval: 10,
-    numImages: 20,
+    images: {
+      maxIndex: 19,
+      interval: 10,
+      removed: [],
+    },
     duration: 1000,
     id: 1,
     originalVideoPath: '',
@@ -38,8 +41,11 @@ test('multiple chunks smaller than image size', () => {
 
   const config: Video = {
     title: 'test',
-    imageInterval: 10,
-    numImages: 3,
+    images: {
+      maxIndex: 2,
+      interval: 10,
+      removed: [],
+    },
     duration: 1000,
     id: 1,
     originalVideoPath: '',
@@ -74,8 +80,11 @@ test('text chunks somewhat larger than image interval', () => {
 
   const config: Video = {
     title: 'test',
-    imageInterval: 10,
-    numImages: 7,
+    images: {
+      maxIndex: 6,
+      interval: 10,
+      removed: [],
+    },
     duration: 1000,
     id: 1,
     originalVideoPath: '',
@@ -118,8 +127,11 @@ test('text chunks span multiple image intervals', () => {
 
   const config: Video = {
     title: 'test',
-    imageInterval: 10,
-    numImages: 6,
+    images: {
+      maxIndex: 5,
+      interval: 10,
+      removed: [],
+    },
     duration: 1000,
     id: 1,
     originalVideoPath: '',
@@ -150,8 +162,11 @@ test('no text at start of video', () => {
 
   const config: Video = {
     title: 'test',
-    imageInterval: 10,
-    numImages: 6,
+    images: {
+      maxIndex: 5,
+      interval: 10,
+      removed: [],
+    },
     duration: 1000,
     id: 1,
     originalVideoPath: '',
