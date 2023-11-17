@@ -29,7 +29,7 @@ function init() {
 init();
 
 function saveConfig() {
-  return fs.writeFile(configPath, JSON.stringify(config));
+  return fs.writeFile(configPath, JSON.stringify(config, null, 2));
 }
 
 export function listItems() {
@@ -37,10 +37,10 @@ export function listItems() {
 }
 
 // Currently this only takes local paths to already-processed data.
-export async function loadNewItem(file: string) {
+export async function loadNewItem(file: string): Promise<Video | null> {
   const existing = config.items.find((item) => item.processedPath === file);
   if (existing) {
-    return existing.id;
+    return existing;
   }
 
   let contentDir = file;
@@ -82,8 +82,14 @@ export function getItem(id: number) {
   return config.items.find((item) => item.id === id);
 }
 
+export function createPath(item: Video, filename: string) {
+  const fullPath = path.join(item.processedPath, filename);
+  return path.resolve(dataDir, fullPath);
+}
+
 export async function getItemText(item: Video): Promise<TranscriptChunk[]> {
-  const data = await fs.readFile(path.join(dataDir, item.processedPath, 'transcript.json'));
+  const transcriptPath = createPath(item, 'transcript.json');
+  const data = await fs.readFile(transcriptPath);
   return JSON.parse(data.toString());
 }
 
@@ -97,13 +103,8 @@ export function loadImage(docId: number, id: number) {
     return null;
   }
 
-  let stream = createReadStream(
-    path.join(
-      dataDir,
-      item.processedPath,
-      'image-' + (id + 1).toString().padStart(5, '0') + '.webp'
-    )
-  );
+  const imagePath = createPath(item, 'image-' + (id + 1).toString().padStart(5, '0') + '.webp');
+  let stream = createReadStream(imagePath);
 
   return Readable.toWeb(stream);
 }

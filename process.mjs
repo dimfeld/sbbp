@@ -5,21 +5,35 @@ import 'zx/globals';
 const inputUrl = process.argv[3];
 
 const processDir = path.join(__dirname, 'viewer', 'data', inputUrl.replaceAll(/[^a-zA-Z0-9]+/g, '_'));
-const downloadPath = path.join(processDir, 'video-dl')
 
 const imageInterval = 10;
 
 await $`mkdir -p ${processDir}`;
 
+function titleFromFilename(filename) {
+  filename = path.basename(filename);
+  const lastDot = filename.lastIndexOf('.');
+  if(lastDot >= 0) {
+    filename = filename.slice(0, lastDot);
+  }
+
+  return filename;
+}
+
 let videoFile;
+let title;
 if(inputUrl.startsWith('http')) {
+  const downloadPath = path.join(processDir, 'video-dl-%(title)s.%(ext)s');
   await $`yt-dlp --output ${downloadPath} ${inputUrl}`;
-  videoFile = (await glob(`${downloadPath}.*`))[0];
+  videoFile = (await glob(path.join(processDir, 'video-dl-*')))[0];
   if(!videoFile) {
     throw new Error('Failed to download video');
   }
+
+  title = titleFromFilename(videoFile);
 } else {
   videoFile = inputUrl;
+  title = titleFromFilename(title).slice('video-dl-'.length);
   if(!fs.existsSync(inputUrl)) {
     throw new Error('No such file or directory: ' + inputUrl);
   }
@@ -29,7 +43,7 @@ async function processAudio() {
   const audioPath = path.join(processDir, 'raw_audio.wav');
   const transcriptPath = path.join(processDir, 'transcript.json');
   await $`ffmpeg -y -i ${videoFile} -vn -acodec pcm_s16le -ar 16000 -ac 1 ${audioPath}`;
-  await spinner(() => $`rye run whisper ${audioPath}`.pipe(fs.createWriteStream(transcriptPath)));
+  await $`rye run whisper ${audioPath}`.pipe(fs.createWriteStream(transcriptPath));
   await $`rm ${audioPath}`;
 
   const transcript = JSON.parse(await fs.readFile(transcriptPath));
@@ -42,7 +56,7 @@ async function extractImages() {
   const fps = `fps=1/${imageInterval}`;
   await $`ffmpeg -y -i ${videoFile} -vf ${fps} -c:v libwebp ${imagePath}`;
 
-  const images = await glob(`${imagePath}.*`);
+  const images = await glob(path.join(processDir, 'image-*.webp'));
   return images.length;
 }
 
@@ -52,7 +66,7 @@ const [duration, numImages] = await Promise.all([
 ]);
 
 const config = {
-  title: path.basename(videoFile).split('.')[0],
+  title,
   originalVideoPath: inputUrl,
   processedPath: processDir,
   numImages,

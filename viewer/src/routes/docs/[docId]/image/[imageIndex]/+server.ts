@@ -3,7 +3,7 @@ import { error } from '@sveltejs/kit';
 
 export async function GET({ params }) {
   const { docId, imageIndex } = params;
-  const image = loadImage(docId, imageIndex);
+  const image = loadImage(+docId, +imageIndex);
   if (!image) {
     throw error(404, { message: 'not found' });
   }

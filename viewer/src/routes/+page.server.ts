@@ -19,13 +19,13 @@ export const actions = {
       });
     }
 
-    const id = await loadNewItem(path);
-    if (id == null) {
+    const item = await loadNewItem(path);
+    if (item == null) {
       return fail(404, {
         error: 'File not found',
       });
     }
 
-    throw redirect(307, '/docs/' + id);
+    throw redirect(307, '/docs/' + item.id);
   },
 } satisfies Actions;

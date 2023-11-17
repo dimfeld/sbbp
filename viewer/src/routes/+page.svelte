@@ -18,7 +18,7 @@
 
   <ul class="flex flex-col gap-4">
     {#each data.items as item (item.id)}
-      <li><a href="/docs/{item.id}" class="underline">{item.title}</a> - {item.duration}</li>
+      <li><a href="/docs/{item.id}" class="underline">{item.title}</a> - {item.duration}s</li>
     {/each}
   </ul>
 </main>
