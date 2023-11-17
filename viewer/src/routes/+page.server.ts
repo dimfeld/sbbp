@@ -12,7 +12,7 @@ export async function load() {
 export const actions = {
   default: async (event) => {
     const formData = await event.request.formData();
-    const path = formData.get('path');
+    const path = formData.get('path') as string;
     if (!path) {
       return fail(400, {
         error: 'No path provided',

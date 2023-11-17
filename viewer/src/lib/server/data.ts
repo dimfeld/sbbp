@@ -44,8 +44,12 @@ export async function loadNewItem(file: string) {
   }
 
   let contentDir = file;
-  if (contentDir.endsWith('.json')) {
+  if (await fs.stat(contentDir).then((s) => s.isFile())) {
     contentDir = path.dirname(contentDir);
+  }
+
+  if (!(await fs.stat(contentDir).then((s) => s.isDirectory()))) {
+    return null;
   }
 
   const itemConfigPath = path.join(contentDir, 'sbbp.json');
