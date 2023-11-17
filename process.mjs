@@ -4,7 +4,8 @@ import 'zx/globals';
 
 const inputUrl = process.argv[3];
 
-const processDir = path.join(__dirname, 'viewer', 'data', inputUrl.replaceAll(/[^a-zA-Z0-9]+/g, '_'));
+const pythonDir = path.join(__dirname, 'python');
+const processDir = path.join(__dirname, 'app', 'data', inputUrl.replaceAll(/[^a-zA-Z0-9]+/g, '_'));
 
 const imageInterval = 10;
 
@@ -43,7 +44,12 @@ async function processAudio() {
   const audioPath = path.join(processDir, 'raw_audio.wav');
   const transcriptPath = path.join(processDir, 'transcript.json');
   await $`ffmpeg -y -i ${videoFile} -vn -acodec pcm_s16le -ar 16000 -ac 1 ${audioPath}`;
-  await $`rye run whisper ${audioPath}`.pipe(fs.createWriteStream(transcriptPath));
+
+  await within(async () => {
+    cd(pythonDir);
+    await $`rye run whisper ${audioPath}`.pipe(fs.createWriteStream(transcriptPath));
+  });
+
   await $`rm ${audioPath}`;
 
   const transcript = JSON.parse(await fs.readFile(transcriptPath));
