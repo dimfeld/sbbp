@@ -1,11 +1,7 @@
 # Should've Been a Blog Post
 
-How often have you watched a YouTube video and thought "I just spent 45 minutes watching this thing and could have
-skimmed a blog post and got the same value?" Or maybe you have limited free time, and after putting the kids to bed,
-doing the dishes, and so on, you barely even have time to watch a video before bed.
+Have you ever found yourself watching a lengthy YouTube video and realizing that you could have just read a blog post instead? Or perhaps you're short on time and can't spare the minutes to watch even a useful video after a long day.
 
-This tool helps with that, using Whisper to obtain a high quality transcript and placing images alongside the text so you
-don't miss out on the visuals too.
+This tool addresses those issues, generating a high-quality transcript with Whisper, and extracting images to ensure you don't miss out on any visual content.
 
-This is a work in progress. The core application works but the layout needs some tweaking to improve the reading
-experience.
+While the core application is functional, the layout is still a work in progress and will be improved to enhance the reading experience.
