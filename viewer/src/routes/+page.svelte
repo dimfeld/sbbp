@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { enhance } from '$app/forms';
   import { align } from '$lib/align';
   import Viewer from './Viewer.svelte';
 
@@ -7,8 +8,9 @@
   $: processedData = align(data.file);
 </script>
 
-{#if !data.file}
-  <p>Select a config file from the query string</p>
-{:else}
-  <Viewer data={processedData} />
-{/if}
+<form use:enhance>
+  <label>
+    <p>File path</p>
+    <input type="text" name="path" />
+  </label>
+</form>

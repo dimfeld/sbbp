@@ -31,14 +31,10 @@ export function align(config: Config | null) {
     },
   ];
 
-  function addTextToCurrentChunk() {
-    const chunk = output[output.length - 1];
-  }
-
   let textIndex = 0;
   while (textIndex < config.text.length) {
     const {
-      timestamp: [textStart, textEnd],
+      timestamp: [textStart],
     } = config.text[textIndex];
 
     const currentChunk = output[output.length - 1];
@@ -51,13 +47,7 @@ export function align(config: Config | null) {
     // };
 
     if (textStart > chunkBoundary) {
-      // Set the images for this chunk, and create a new chunk
-      // console.log({ ...info, action: 'newChunk' });
-      currentChunk.images = [
-        Math.ceil(currentChunk.timestamp[0] / imageInterval),
-        Math.floor(currentChunk.timestamp[1] / imageInterval),
-      ];
-
+      // Create a new chunk
       output.push({
         timestamp: [textStart, textStart],
         text: '',
@@ -66,24 +56,31 @@ export function align(config: Config | null) {
     } else {
       // console.log({ ...info, action: 'addTextToCurrentChunk' });
       const addText = inputText[textIndex].text;
+
+      // Add a space if the transcript doesn't have it (Whisper usually does actually, but just in case)
       if (currentChunk.text && addText[0] !== ' ' && !currentChunk.text.endsWith(' ')) {
         currentChunk.text += ' ';
       }
       currentChunk.text += inputText[textIndex].text;
+
       currentChunk.timestamp[1] = Math.max(
         inputText[textIndex].timestamp[1],
         currentChunk.timestamp[1]
       );
+
       textIndex++;
     }
   }
 
   const lastChunk = output[output.length - 1];
   lastChunk.timestamp[1] = Math.max(imageTimestamp(numImages - 1), lastChunk.timestamp[1]);
-  lastChunk.images = [
-    Math.min(Math.ceil(lastChunk.timestamp[0] / imageInterval), numImages - 1),
-    Math.min(Math.floor(lastChunk.timestamp[1] / imageInterval), numImages - 1),
-  ];
+
+  for (let chunk of output) {
+    chunk.images = [
+      Math.min(Math.ceil(chunk.timestamp[0] / imageInterval), numImages - 1),
+      Math.min(Math.floor(chunk.timestamp[1] / imageInterval), numImages - 1),
+    ];
+  }
 
   return {
     title,
