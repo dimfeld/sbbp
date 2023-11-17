@@ -9,6 +9,7 @@ export async function GET({ params }) {
   }
 
   const res = new Response(image);
+  // Images are always webp right now. May need to do something better in the future.
   res.headers.set('Content-Type', 'image/webp');
   return res;
 }

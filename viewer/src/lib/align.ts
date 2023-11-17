@@ -1,28 +1,13 @@
-import type { Config, ConfigTextChunk, ViewerChunk } from './types';
+import type { TranscriptChunk, Video, ViewerChunk } from './types';
 
-export function align(config: Config | null) {
-  if (!config) {
-    return null;
-  }
+export function align(config: Video, inputText: TranscriptChunk[]) {
+  const { imageInterval, numImages, title } = config;
 
-  const { text: inputText, imageInterval, numImages, title } = config;
-
-  const imageName = (index: number) => {
-    return 'image-' + (index + 1).toString().padStart(5, '0') + '.webp';
-  };
   const imageTimestamp = (index: number) => {
     return index * imageInterval;
   };
 
-  let imageIndex = 0;
-
-  // Sometimes the video doesn't actually start right away, such as when the video is from a livestream.
-  // In this case we skip ahead to where the talking starts.
-  let firstTextTimestamp = config.text[0].timestamp[0];
-  if (firstTextTimestamp > config.imageInterval) {
-    imageIndex = Math.floor(firstTextTimestamp / config.imageInterval);
-  }
-
+  let firstTextTimestamp = inputText[0].timestamp[0];
   let output: ViewerChunk[] = [
     {
       timestamp: [firstTextTimestamp, firstTextTimestamp],
@@ -32,10 +17,10 @@ export function align(config: Config | null) {
   ];
 
   let textIndex = 0;
-  while (textIndex < config.text.length) {
+  while (textIndex < inputText.length) {
     const {
       timestamp: [textStart],
-    } = config.text[textIndex];
+    } = inputText[textIndex];
 
     const currentChunk = output[output.length - 1];
     const chunkBoundary = currentChunk.timestamp[0] + imageInterval;
@@ -82,8 +67,5 @@ export function align(config: Config | null) {
     ];
   }
 
-  return {
-    title,
-    chunks: output,
-  };
+  return output;
 }

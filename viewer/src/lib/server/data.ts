@@ -1,17 +1,9 @@
 import { env } from '$env/dynamic/private';
+import type { TranscriptChunk, Video } from '$lib/types';
 import { readFileSync, createReadStream } from 'fs';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { Readable } from 'stream';
-
-export interface Video {
-  id: number;
-  title: string;
-  originalVideoPath: string;
-  processedPath: string;
-  numImages: number;
-  duration: number;
-}
 
 interface Config {
   items: Video[];
@@ -34,8 +26,14 @@ function init() {
   }
 }
 
+init();
+
 function saveConfig() {
   return fs.writeFile(configPath, JSON.stringify(config));
+}
+
+export function listItems() {
+  return config.items;
 }
 
 // Currently this only takes local paths to already-processed data.
@@ -49,13 +47,38 @@ export async function loadNewItem(file: string) {
   if (contentDir.endsWith('.json')) {
     contentDir = path.dirname(contentDir);
   }
+
+  const itemConfigPath = path.join(contentDir, 'sbbp.json');
+  const itemConfigData = await fs.readFile(itemConfigPath);
+  const itemConfig = JSON.parse(itemConfigData.toString());
+
+  const id = config.items.reduce((acc, item) => Math.max(acc, item.id), 0) + 1;
+
+  const newItem = {
+    id,
+    title: itemConfig.title,
+    originalVideoPath: itemConfig.originalVideoPath,
+    processedPath: contentDir,
+    imageInterval: itemConfig.imageInterval,
+    numImages: itemConfig.numImages,
+    duration: itemConfig.duration,
+  };
+
+  config.items.push(newItem);
+  await saveConfig();
+  return newItem;
+}
+
+export async function deleteItem(id: number) {
+  config.items = config.items.filter((item) => item.id !== id);
+  await saveConfig();
 }
 
 export function getItem(id: number) {
   return config.items.find((item) => item.id === id);
 }
 
-export async function getItemText(item: Video) {
+export async function getItemText(item: Video): Promise<TranscriptChunk[]> {
   const data = await fs.readFile(path.join(dataDir, item.processedPath, 'transcript.json'));
   return JSON.parse(data.toString());
 }

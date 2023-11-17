@@ -1,16 +1,11 @@
 import { redirect, type Actions, fail } from '@sveltejs/kit';
-import { loadNewItem } from '$lib/server/data';
+import { listItems, loadNewItem } from '$lib/server/data';
 
-export async function load({ url }) {
-  const path = url.searchParams.get('path');
-  if (!path) {
-    return {
-      file: null,
-    };
-  }
+export async function load() {
+  const items = listItems();
 
   return {
-    file: null,
+    items,
   };
 }
 
