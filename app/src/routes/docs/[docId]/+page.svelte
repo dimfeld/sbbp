@@ -6,31 +6,36 @@
 
   let showRemoved = false;
 
-  $: removed = showRemoved ? new Set() : new Set(data.item.images.removed);
+  $: removed = new Set(data.item.images.removed);
   $: aligned = align(data.item, data.text);
 
-  function imageRange([start, end]: number[]) {
+  function imageRange([start, end]: number[], showRemoved: boolean) {
     if (start == end) {
-      if (removed.has(start)) {
-        return [];
-      } else {
+      if (showRemoved || !removed.has(start)) {
         return [start];
+      } else {
+        return [];
       }
     } else {
-      return Array.from({ length: end - start + 1 }, (_, i) => start + i).filter(
-        (i) => !removed.has(i)
-      );
+      let range = Array.from({ length: end - start + 1 }, (_, i) => start + i);
+
+      if (!showRemoved) {
+        range = range.filter((i) => !removed.has(i));
+      }
+
+      return range;
     }
   }
 
   let largeImage: number | null = null;
 </script>
 
+<label class="fixed right-2 top-2 z-10">
+  <input type="checkbox" bind:checked={showRemoved} />
+  Show removed images
+</label>
+
 <main class="relative p-4 mx-auto flex flex-col items-center">
-  <label class="absolute right-2 top-2">
-    <input type="checkbox" bind:checked={showRemoved} />
-    Show removed images
-  </label>
   <div class="flex flex-col">
     <h1 class="text-xl">{data.item.title}</h1>
   </div>
@@ -38,7 +43,7 @@
     {#each aligned as chunk}
       <div class="max-w-[65ch]">{chunk.text}</div>
       <div class="flex flex-col gap-2 max-w-lg">
-        {#each imageRange(chunk.images) as image}
+        {#each imageRange(chunk.images, showRemoved) as image}
           <button type="button" on:click={() => (largeImage = image)}>
             <img
               class="object-cover"
@@ -54,7 +59,7 @@
 </main>
 
 {#if largeImage}
-  <button class="fixed inset-0" on:click={() => (largeImage = null)}>
+  <button class="fixed inset-0 z-50" on:click={() => (largeImage = null)}>
     <img src="/docs/{$page.params.docId}/image/{largeImage}" alt="Image {largeImage}" />
   </button>
 {/if}
