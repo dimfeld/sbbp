@@ -19,6 +19,7 @@ export interface Video {
   title: string;
   originalVideoPath: string;
   processedPath: string;
+  summary: string;
   images: {
     maxIndex: number;
     removed: number[];

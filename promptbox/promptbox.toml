@@ -1,0 +1,11 @@
+[model]
+model = "zephyr"
+
+[model.alias]
+codellama = "codellama:7b-instruct-q5_K_M"
+codellama-complete = "codellama:7b-code-q5_K_M"
+mistral = "mistral:7b-instruct-q5_K_M"
+yarn-mistral = "yarn-mistral:7b-128k-q5_K_M"
+zephyr = "zephyr:7b-beta-q5_K_M"
+nous-hermes = "nous-hermes:13b-llama2-q5_K_M"
+orca-mini = "orca-mini:13b-v3-q5_K_M"

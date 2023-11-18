@@ -1,6 +1,7 @@
 #!/usr/bin/env zx
 
 import { removeSimilarImages } from './calculate_similarity.mjs';
+import {summarize} from './summarize.mjs';
 
 const inputUrl = process.argv[3];
 if(!inputUrl) {
@@ -46,10 +47,12 @@ async function processAudio() {
   const transcriptPath = path.join(processDir, 'transcript.json');
   await $`ffmpeg -y -i ${videoFile} -vn -acodec pcm_s16le -ar 16000 -ac 1 ${audioPath}`;
 
+  const whisperStart = Date.now();
   await within(async () => {
     cd(pythonDir);
     await $`rye run whisper ${audioPath}`.pipe(fs.createWriteStream(transcriptPath));
   });
+  const whisperTime = Date.now() - whisperStart;
 
   await $`rm ${audioPath}`;
 
@@ -57,27 +60,41 @@ async function processAudio() {
   // Sometimes the last item has a null timestamp, so find the last chunk that has a timestamp
   const lastWithTimestamp = transcript.findLast((t) => t.timestamp[1]);
   const finalTimestamp = Math.ceil(lastWithTimestamp.timestamp[1]);
-  return finalTimestamp;
+
+  const summaryStart = Date.now();
+  const summary = await summarize(title, transcript)
+  const summaryTime = Date.now() - summaryStart;
+
+  return { audioConfig: { summary, duration: finalTimestamp }, timing: { whisper: whisperTime, summary: summaryTime } };
 }
 
 async function extractImages() {
   const interval = 10;
 
+  const extractStart = Date.now();
   const imagePath = path.join(processDir, 'image-%05d.webp');
   const fps = `fps=1/${interval}`;
   await $`ffmpeg -y -i ${videoFile} -vf ${fps} -c:v libwebp ${imagePath}`;
 
+  const similarityStart = Date.now();
   const images = await glob(path.join(processDir, 'image-*.webp'));
   const removed = await removeSimilarImages(images);
+  const similarityDone = Date.now();
 
   return {
-    maxIndex: images.length - 1,
-    removed,
-    interval,
+    imageConfig: {
+      maxIndex: images.length - 1,
+      removed,
+      interval,
+    },
+    timing: {
+      extract: similarityStart - extractStart,
+      similarity: similarityDone - similarityStart,
+    }
   };
 }
 
-const [duration, images] = await Promise.all([
+const [audioInfo, images] = await Promise.all([
   processAudio(),
   extractImages()
 ]);
@@ -86,12 +103,18 @@ const config = {
   title,
   originalVideoPath: inputUrl,
   processedPath: processDir,
-  images,
-  duration,
+  images: images.imageConfig,
+  ...audioInfo.audioConfig,
+};
+
+const timing = {
+  ...images.timing,
+  ...audioInfo.timing,
 };
 
 const configPath = path.join(processDir, 'sbbp.json');
 await fs.writeFile(configPath, JSON.stringify(config));
 
+echo('Took', timing);
 echo('Wrote to ', configPath);
 
