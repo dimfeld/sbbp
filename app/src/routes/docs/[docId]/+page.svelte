@@ -4,7 +4,9 @@
 
   export let data;
 
-  $: removed = new Set(data.item.images.removed);
+  let showRemoved = false;
+
+  $: removed = showRemoved ? new Set() : new Set(data.item.images.removed);
   $: aligned = align(data.item, data.text);
 
   function imageRange([start, end]: number[]) {
@@ -22,11 +24,15 @@
   }
 </script>
 
-<main class="p-4 mx-auto flex flex-col items-center">
+<main class="relative p-4 mx-auto flex flex-col items-center">
+  <label class="absolute right-2 top-2">
+    <input type="checkbox" bind:checked={showRemoved} />
+    Show removed images
+  </label>
   <div class="flex flex-col">
     <h1 class="text-xl">{data.item.title}</h1>
   </div>
-  <div class="grid grid-cols-[auto] gap-x-4 gap-y-2 mt-4 font-serif">
+  <div class="grid grid-cols-[auto_auto] gap-x-4 gap-y-2 mt-4 font-serif">
     {#each aligned as chunk}
       <div class="max-w-[65ch]">{chunk.text}</div>
       <div class="flex flex-col gap-2 max-w-lg">

@@ -7,7 +7,7 @@
   export let data;
 </script>
 
-<main class="p-4">
+<main class="relative p-4">
   <form method="POST" use:enhance class="flex flex-col gap-2 rounded-lg border border-border p-4">
     <Label class="flex gap-2 flex-1 max-w-[100ch] text-base" for="path">Add new path</Label>
     <div class="flex gap-2">

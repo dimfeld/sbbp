@@ -1,8 +1,11 @@
 #!/usr/bin/env zx
 
-import 'zx/globals';
+import { removeSimilarImages } from './calculate_similarity.mjs';
 
 const inputUrl = process.argv[3];
+if(!inputUrl) {
+  throw new Error('No URL provided');
+}
 
 const pythonDir = path.join(__dirname, 'python');
 const processDir = path.join(__dirname, 'app', 'data', inputUrl.replaceAll(/[^a-zA-Z0-9]+/g, '_'));
@@ -53,33 +56,6 @@ async function processAudio() {
   const transcript = JSON.parse(await fs.readFile(transcriptPath));
   const finalTimestamp = Math.ceil(transcript[transcript.length - 1].timestamp[1]);
   return finalTimestamp;
-}
-
-async function calculateSimilarity(image1, image2) {
-  return within(async () => {
-    cd(pythonDir);
-    const sim = $`rye run compare-images ${image1} ${image2}`;
-    return parseFloat(sim);
-  });
-}
-
-async function removeSimilarImages(images) {
-  let keep = [0];
-  for(let i = 1; i < iamges.length; i++) {
-    const lastImageIndex = keep[keep.length - 1];
-    const lastImage = images[lastImageIndex];
-    const currentImage = images[i];
-    const similarity = await calculateSimilarity(lastImage, currentImage);
-    if(similarity < 0.95) {
-      // Don't actually delete the image for now, to make it easier to tweak the removal algorithm without redownloading.
-      keep.push(i);
-    }
-  }
-
-  const kept = new Set(keep);
-  const removed = Array.from({ length: images.length }, (_, i) => i).filter((i) => !kept.has(i));
-
-  return removed;
 }
 
 async function extractImages() {
