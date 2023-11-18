@@ -32,10 +32,10 @@ if(inputUrl.startsWith('http')) {
     throw new Error('Failed to download video');
   }
 
-  title = titleFromFilename(videoFile);
+  title = titleFromFilename(videoFile).slice('video-dl-'.length);
 } else {
   videoFile = inputUrl;
-  title = titleFromFilename(title).slice('video-dl-'.length);
+  title = titleFromFilename(videoFile);
   if(!fs.existsSync(inputUrl)) {
     throw new Error('No such file or directory: ' + inputUrl);
   }
