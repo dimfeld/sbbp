@@ -18,7 +18,7 @@ export async function removeSimilarImages(images) {
     const currentImage = images[i];
     const similarity = await calculateSimilarity(lastImage, currentImage);
 
-    if(similarity < 0.95) {
+    if(similarity < 0.90) {
       // Don't actually delete the image for now, to make it easier to tweak the removal algorithm without redownloading.
       keep.push(i);
     }
