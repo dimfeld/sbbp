@@ -43,6 +43,51 @@ export async function loadNewItem(file: string): Promise<Video | null> {
     return existing;
   }
 
+  const itemConfig = await loadItem(file);
+  if (!itemConfig) {
+    return null;
+  }
+
+  const id = config.items.reduce((acc, item) => Math.max(acc, item.id), 0) + 1;
+
+  const newItem = {
+    id,
+    ...itemConfig,
+  };
+
+  config.items.push(newItem);
+  await saveConfig();
+  return newItem;
+}
+
+export async function deleteItem(id: number) {
+  config.items = config.items.filter((item) => item.id !== id);
+  await saveConfig();
+}
+
+export async function reloadItem(id: number) {
+  const itemIndex = config.items.findIndex((item) => item.id === id);
+  if (itemIndex < 0) {
+    return null;
+  }
+
+  const existingItem = config.items[itemIndex];
+
+  const newConfig = await loadItem(existingItem.processedPath);
+  if (!newConfig) {
+    return null;
+  }
+
+  config.items[itemIndex] = {
+    id: existingItem.id,
+    ...newConfig,
+  };
+
+  await saveConfig();
+  return config.items[itemIndex];
+}
+
+export async function loadItem(file: string) {
   let contentDir = file;
   if (await fs.stat(contentDir).then((s) => s.isFile())) {
     contentDir = path.dirname(contentDir);
@@ -55,26 +100,9 @@ export async function loadNewItem(file: string): Promise<Video | null> {
   const itemConfigPath = path.join(contentDir, 'sbbp.json');
   const itemConfigData = await fs.readFile(itemConfigPath);
   const itemConfig: Omit<Video, 'id'> = JSON.parse(itemConfigData.toString());
+  itemConfig.processedPath = contentDir;
 
-  const id = config.items.reduce((acc, item) => Math.max(acc, item.id), 0) + 1;
-
-  const newItem = {
-    id,
-    title: itemConfig.title,
-    originalVideoPath: itemConfig.originalVideoPath,
-    processedPath: contentDir,
-    images: itemConfig.images,
-    duration: itemConfig.duration,
-  };
-
-  config.items.push(newItem);
-  await saveConfig();
-  return newItem;
-}
-
-export async function deleteItem(id: number) {
-  config.items = config.items.filter((item) => item.id !== id);
-  await saveConfig();
+  return itemConfig;
 }
 
 export function getItem(id: number) {
