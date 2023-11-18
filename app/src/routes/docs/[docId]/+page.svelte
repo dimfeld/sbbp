@@ -22,6 +22,8 @@
       );
     }
   }
+
+  let largeImage: number | null = null;
 </script>
 
 <main class="relative p-4 mx-auto flex flex-col items-center">
@@ -37,14 +39,22 @@
       <div class="max-w-[65ch]">{chunk.text}</div>
       <div class="flex flex-col gap-2 max-w-lg">
         {#each imageRange(chunk.images) as image}
-          <img
-            class="object-cover"
-            src="/docs/{$page.params.docId}/image/{image}"
-            alt="Image {image}"
-            loading="lazy"
-          />
+          <button type="button" on:click={() => (largeImage = image)}>
+            <img
+              class="object-cover"
+              src="/docs/{$page.params.docId}/image/{image}"
+              alt="Image {image}"
+              loading="lazy"
+            />
+          </button>
         {/each}
       </div>
     {/each}
   </div>
 </main>
+
+{#if largeImage}
+  <button class="fixed inset-0" on:click={() => (largeImage = null)}>
+    <img src="/docs/{$page.params.docId}/image/{largeImage}" alt="Image {largeImage}" />
+  </button>
+{/if}
