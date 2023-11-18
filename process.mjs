@@ -54,7 +54,9 @@ async function processAudio() {
   await $`rm ${audioPath}`;
 
   const transcript = JSON.parse(await fs.readFile(transcriptPath));
-  const finalTimestamp = Math.ceil(transcript[transcript.length - 1].timestamp[1]);
+  // Sometimes the last item has a null timestamp, so find the last chunk that has a timestamp
+  const lastWithTimestamp = transcript.findLast((t) => t.timestamp[1]);
+  const finalTimestamp = Math.ceil(lastWithTimestamp.timestamp[1]);
   return finalTimestamp;
 }
 
