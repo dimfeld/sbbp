@@ -115,6 +115,6 @@ const timing = {
 const configPath = path.join(processDir, 'sbbp.json');
 await fs.writeFile(configPath, JSON.stringify(config));
 
-echo('Took', timing);
+echo('Took', JSON.stringify(timing, null, 2));
 echo('Wrote to ', configPath);
 
