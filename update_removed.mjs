@@ -10,8 +10,8 @@ if(!fs.existsSync(dir)) {
   throw new Error('Directory does not exist');
 }
 
-const images = await glob(path.join(dir, 'image-*.webp'));
-const removed = await removeSimilarImages(images);
+const images = path.join(dir, 'image-*.webp');
+const { removed } = await removeSimilarImages(images);
 config.images.removed = removed;
 
 await fs.writeFile(path.join(dir, 'sbbp.json'), JSON.stringify(config, null, 2));

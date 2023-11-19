@@ -62,8 +62,15 @@ async function processAudio() {
   const finalTimestamp = Math.ceil(lastWithTimestamp.timestamp[1]);
 
   const summaryStart = Date.now();
-  const summary = await summarize(title, transcript)
+  let summary = '';
+  try {
+    summary = await summarize(title, transcript);
+  } catch(e) {
+    console.error(e);
+  }
   const summaryTime = Date.now() - summaryStart;
+
+  // console.log('processAudio done');
 
   return { audioConfig: { summary, duration: finalTimestamp }, timing: { whisper: whisperTime, summary: summaryTime } };
 }
@@ -77,13 +84,15 @@ async function extractImages() {
   await $`ffmpeg -y -i ${videoFile} -vf ${fps} -c:v libwebp ${imagePath}`;
 
   const similarityStart = Date.now();
-  const images = await glob(path.join(processDir, 'image-*.webp'));
-  const removed = await removeSimilarImages(images);
+  const imageGlob = path.join(processDir, 'image-*.webp');
+  const { removed, numImages } = await removeSimilarImages(imageGlob);
   const similarityDone = Date.now();
+
+  // console.log('extractImages done');
 
   return {
     imageConfig: {
-      maxIndex: images.length - 1,
+      maxIndex: numImages - 1,
       removed,
       interval,
     },
@@ -98,6 +107,8 @@ const [audioInfo, images] = await Promise.all([
   processAudio(),
   extractImages()
 ]);
+
+// console.log('tasks done')
 
 const config = {
   title,
