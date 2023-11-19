@@ -17,6 +17,14 @@ let config: Config;
 function init() {
   try {
     config = JSON.parse(readFileSync(configPath).toString());
+
+    for (let item of config.items) {
+      if (!item.viewerData) {
+        item.viewerData = {
+          read: false,
+        };
+      }
+    }
   } catch (e) {
     config = {
       items: [],
@@ -50,8 +58,11 @@ export async function loadNewItem(file: string): Promise<Video | null> {
 
   const id = config.items.reduce((acc, item) => Math.max(acc, item.id), 0) + 1;
 
-  const newItem = {
+  const newItem: Video = {
     id,
+    viewerData: {
+      read: false,
+    },
     ...itemConfig,
   };
 
@@ -80,11 +91,23 @@ export async function reloadItem(id: number) {
 
   config.items[itemIndex] = {
     id: existingItem.id,
+    viewerData: existingItem.viewerData,
     ...newConfig,
   };
 
   await saveConfig();
   return config.items[itemIndex];
+}
+
+export async function updateReadState(docId: number, read: boolean): Promise<boolean> {
+  const item = config.items.find((item) => item.id === docId);
+  if (!item) {
+    return false;
+  }
+
+  item.viewerData.read = read;
+  await saveConfig();
+  return true;
 }
 
 export async function loadItem(file: string) {
@@ -99,7 +122,7 @@ export async function loadItem(file: string) {
 
   const itemConfigPath = path.join(contentDir, 'sbbp.json');
   const itemConfigData = await fs.readFile(itemConfigPath);
-  const itemConfig: Omit<Video, 'id'> = JSON.parse(itemConfigData.toString());
+  const itemConfig: Omit<Video, 'id' | 'viewerData'> = JSON.parse(itemConfigData.toString());
   itemConfig.processedPath = contentDir;
 
   return itemConfig;

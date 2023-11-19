@@ -14,8 +14,13 @@ export interface TranscriptChunk {
   text: string;
 }
 
+export interface VideoViewerData {
+  read: boolean;
+}
+
 export interface Video {
   id: number;
+  viewerData: VideoViewerData;
   title: string;
   originalVideoPath: string;
   processedPath: string;
