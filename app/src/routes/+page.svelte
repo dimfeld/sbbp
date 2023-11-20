@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { browser } from '$app/environment';
   import { enhance } from '$app/forms';
   import { Button } from '$lib/components/ui/button';
   import { Input } from '$lib/components/ui/input';
@@ -12,11 +13,25 @@
     MailOpenIcon as ReadIcon,
     MailIcon as UnreadIcon,
   } from 'lucide-svelte';
+  import { formatDuration } from '$lib/format.js';
+  import { invalidate } from '$app/navigation';
 
   export let data;
   export let form;
 
   let unreadOnly = true;
+
+  let timer: number | null = null;
+  $: if (
+    browser &&
+    !timer &&
+    data.items.some((item) => (item.viewerData.processStatus ?? 'complete') !== 'complete')
+  ) {
+    timer = window.setTimeout(() => {
+      timer = null;
+      invalidate('resource://items');
+    }, 5000);
+  }
 
   $: items = unreadOnly ? data.items.filter((item) => !item.viewerData.read) : data.items;
 </script>
@@ -24,11 +39,11 @@
 <main class="relative p-4 flex flex-col gap-4">
   <form
     method="POST"
-    action="?/add"
+    action="?/download"
     use:enhance
     class="flex flex-col gap-2 rounded-lg border border-border p-4"
   >
-    <Label class="flex gap-2 flex-1 max-w-[100ch] text-base" for="path">Add new path</Label>
+    <Label class="flex gap-2 flex-1 max-w-[100ch] text-base" for="path">Add new video</Label>
     <div class="flex gap-2">
       <Input type="text" name="path" class="flex-1" autocomplete="off" />
       <Button type="submit">Add</Button>
@@ -49,27 +64,45 @@
   <ul class="flex flex-col gap-4">
     {#each items as item (item.id)}
       {@const read = item.viewerData.read}
+      {@const ready = (item.viewerData.processStatus ?? 'complete') === 'complete'}
       <li class="flex justify-between">
-        <p>
-          <a href="/docs/{item.id}" class="underline">{item.title}</a> - {item.duration}s
-        </p>
-        <p></p>
-        <form method="POST" action="?/refresh" class="flex gap-2" use:enhance>
-          <input type="hidden" name="id" value={item.id} />
-          <input type="hidden" name="new_read" value={!read} />
-          <Button
-            variant="outline"
-            size="icon"
-            type="submit"
-            formaction="?/mark_read"
-            aria-label="Mark {read ? 'Unread' : 'Read'}"
-          >
-            {#if read}
-              <ReadIcon />
+        <p class="flex flex-col">
+          {#if ready}
+            <a href="/docs/{item.id}" class="underline">{item.title}</a>
+            <span>
+              {formatDuration(item.duration)}
+            </span>
+          {:else}
+            <p>{item.originalVideoPath}</p>
+            {#if item.viewerData.processStatus === 'error' && item.process?.error}
+              <p class="text-red-500">{item.process.error}</p>
             {:else}
-              <UnreadIcon />
+              <p>{item.viewerData.processStatus || ''}</p>
             {/if}
-          </Button>
+          {/if}
+        </p>
+
+        <div class="flex ga-2">
+          <form method="POST" action="?/refresh" use:enhance>
+            <input type="hidden" name="id" value={item.id} />
+            <input type="hidden" name="new_read" value={!read} />
+            {#if ready}
+              <Button
+                variant="outline"
+                size="icon"
+                type="submit"
+                formaction="?/mark_read"
+                aria-label="Mark {read ? 'Unread' : 'Read'}"
+              >
+                {#if read}
+                  <ReadIcon />
+                {:else}
+                  <UnreadIcon />
+                {/if}
+              </Button>
+            {/if}
+          </form>
+
           <DropdownMenu.Root>
             <DropdownMenu.Trigger aria-label="Settings" asChild let:builder>
               <Button variant="outline" size="icon" builders={[builder]}>
@@ -77,22 +110,53 @@
               </Button>
             </DropdownMenu.Trigger>
             <DropdownMenu.Content>
-              <DropdownMenu.Item>
-                <button type="submit" formaction="?/refresh" class="flex items-center gap-2">
-                  <RefreshIcon />
-                  Reload from Disk
-                </button>
-              </DropdownMenu.Item>
+              {#if ready}
+                <DropdownMenu.Item>
+                  <form method="POST" action="?/refresh" use:enhance>
+                    <input type="hidden" name="id" value={item.id} />
+                    <button type="submit" class="flex items-center gap-2">
+                      <RefreshIcon class="h-4 w-4" />
+                      Reload from Disk
+                    </button>
+                  </form>
+                </DropdownMenu.Item>
+              {:else}
+                <DropdownMenu.Item>
+                  <form method="POST" action="?/reprocess" use:enhance>
+                    <input type="hidden" name="id" value={item.id} />
+                    <button type="submit" class="flex items-center gap-2">
+                      <RefreshIcon class="h-4 w-4" />
+                      Reprocess
+                    </button>
+                  </form>
+                </DropdownMenu.Item>
+              {/if}
 
               <DropdownMenu.Item>
-                <button type="submit" formaction="?/delete" class="flex items-center gap-2">
-                  <DeleteIcon /> Delete
-                </button>
+                <form method="POST" action="?/delete" use:enhance>
+                  <input type="hidden" name="id" value={item.id} />
+                  <button type="submit" class="flex items-center gap-2">
+                    <DeleteIcon class="w-4 h-4" /> Delete
+                  </button>
+                </form>
               </DropdownMenu.Item>
             </DropdownMenu.Content>
           </DropdownMenu.Root>
-        </form>
+        </div>
       </li>
     {/each}
   </ul>
+
+  <form
+    method="POST"
+    action="?/add_existing"
+    use:enhance
+    class="flex flex-col gap-2 rounded-lg border border-border p-4"
+  >
+    <Label class="flex gap-2 flex-1 max-w-[100ch] text-base" for="path">Add existing path</Label>
+    <div class="flex gap-2">
+      <Input type="text" name="path" class="flex-1" autocomplete="off" />
+      <Button type="submit">Add</Button>
+    </div>
+  </form>
 </main>

@@ -39,8 +39,11 @@
   "dependencies": {
     "bits-ui": "^0.9.8",
     "clsx": "^2.0.0",
+    "execa": "^8.0.1",
     "formsnap": "^0.4.1",
+    "globby": "^14.0.0",
     "lucide-svelte": "^0.292.0",
+    "pkg-up": "^5.0.0",
     "sveltekit-superforms": "^1.10.2",
     "tailwind-merge": "^2.0.0",
     "tailwind-variants": "^0.1.18",

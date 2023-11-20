@@ -1,7 +1,16 @@
 import { redirect, type Actions, fail } from '@sveltejs/kit';
-import { deleteItem, listItems, loadNewItem, reloadItem, updateReadState } from '$lib/server/data';
+import {
+  deleteItem,
+  enqueueNewItem,
+  listItems,
+  loadNewItem,
+  reloadItem,
+  reprocessItem,
+  updateReadState,
+} from '$lib/server/data';
 
-export async function load() {
+export async function load({ depends }) {
+  depends('resource://items');
   const items = listItems();
 
   return {
@@ -10,7 +19,12 @@ export async function load() {
 }
 
 export const actions = {
-  add: async (event) => {
+  download: async (event) => {
+    const formData = await event.request.formData();
+    const path = formData.get('path') as string;
+    await enqueueNewItem(path);
+  },
+  add_existing: async (event) => {
     const formData = await event.request.formData();
     const path = formData.get('path') as string;
     if (!path) {
@@ -25,8 +39,17 @@ export const actions = {
         error: 'File not found',
       });
     }
+  },
+  reprocess: async (event) => {
+    const formData = await event.request.formData();
+    const id = formData.get('id') as string;
+    if (!id) {
+      return fail(400, {
+        error: 'No id provided',
+      });
+    }
 
-    throw redirect(307, '/docs/' + item.id);
+    await reprocessItem(+id);
   },
   refresh: async (event) => {
     const formData = await event.request.formData();

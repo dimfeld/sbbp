@@ -14,9 +14,12 @@ export interface TranscriptChunk {
   text: string;
 }
 
+export type ProcessStatus = 'queued' | 'downloading' | 'processing' | 'error' | 'complete';
+
 export interface VideoViewerData {
   read: boolean;
   progress: number;
+  processStatus?: ProcessStatus;
 }
 
 export interface Video {
@@ -25,6 +28,10 @@ export interface Video {
   title: string;
   originalVideoPath: string;
   processedPath: string;
+  process?: {
+    error?: string;
+    timing: Record<string, number>;
+  };
   summary: string;
   images: {
     maxIndex: number;
@@ -33,3 +40,5 @@ export interface Video {
   };
   duration: number;
 }
+
+export type ProcessResult = Omit<Video, 'id' | 'viewerData'>;

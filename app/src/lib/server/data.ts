@@ -1,21 +1,23 @@
 import { env } from '$env/dynamic/private';
-import type { TranscriptChunk, Video } from '$lib/types';
+import type { ProcessResult, ProcessStatus, TranscriptChunk, Video } from '$lib/types';
 import { readFileSync, createReadStream } from 'fs';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { Readable } from 'stream';
+import { queueItem } from './process_queue';
+import { pkgUpSync } from 'pkg-up';
 
 interface Config {
   version: number;
   items: Video[];
 }
 
-const dataDir = env.SBBP_DATA_DIR || './data';
+const dataDir = env.SBBP_DATA_DIR || path.join(path.dirname(pkgUpSync()!), 'data');
 const configPath = path.join(dataDir, 'config.json');
 
 let config: Config;
 
-const CONFIG_VERSION = 1;
+const CONFIG_VERSION = 2;
 
 function migrateConfig(config: Config) {
   const version = config.version ?? 0;
@@ -54,6 +56,7 @@ function init() {
       }
     }
   } catch (e) {
+    console.log('Error loading config', e);
     config = {
       version: CONFIG_VERSION,
       items: [],
@@ -92,6 +95,12 @@ async function updateItem(
 
 // Currently this only takes local paths to already-processed data.
 export async function loadNewItem(file: string): Promise<Video | null> {
+  if (!path.isAbsolute(file)) {
+    file = path.resolve(dataDir, file);
+  } else {
+    file = path.relative(dataDir, file);
+  }
+
   const existing = config.items.find((item) => item.processedPath === file);
   if (existing) {
     return existing;
@@ -119,11 +128,14 @@ export async function loadNewItem(file: string): Promise<Video | null> {
 }
 
 export async function deleteItem(id: number) {
+  console.log('delete', id);
   config.items = config.items.filter((item) => item.id !== id);
   await saveConfig();
 }
 
 export async function reloadItem(id: number) {
+  console.log('reload', id);
+  config.items = config.items.filter((item) => item.id !== id);
   const itemIndex = config.items.findIndex((item) => item.id === id);
   if (itemIndex < 0) {
     return null;
@@ -158,8 +170,37 @@ export async function updateReadProgress(docId: number, progress: number): Promi
   });
 }
 
+export async function updateProcessStatus(docId: number, status: ProcessStatus) {
+  return await updateItem(docId, (item) => {
+    item.viewerData.processStatus = status;
+  });
+}
+
+export async function flagProcessingError(docId: number, error: string) {
+  return await updateItem(docId, (item) => {
+    item.viewerData.processStatus = 'error';
+    item.process = {
+      timing: {},
+      error,
+    };
+  });
+}
+
+export async function finishProcessing(docId: number, newConfig: ProcessResult) {
+  return await updateItem(docId, (item) => {
+    return {
+      ...item,
+      ...newConfig,
+      viewerData: {
+        ...item.viewerData,
+        processStatus: 'complete',
+      },
+    };
+  });
+}
+
 export async function loadItem(file: string) {
-  let contentDir = file;
+  let contentDir = path.resolve(dataDir, file);
   if (await fs.stat(contentDir).then((s) => s.isFile())) {
     contentDir = path.dirname(contentDir);
   }
@@ -171,7 +212,7 @@ export async function loadItem(file: string) {
   const itemConfigPath = path.join(contentDir, 'sbbp.json');
   const itemConfigData = await fs.readFile(itemConfigPath);
   const itemConfig: Omit<Video, 'id' | 'viewerData'> = JSON.parse(itemConfigData.toString());
-  itemConfig.processedPath = contentDir;
+  itemConfig.processedPath = path.basename(contentDir);
 
   return itemConfig;
 }
@@ -205,4 +246,43 @@ export function loadImage(docId: number, id: number) {
   let stream = createReadStream(imagePath);
 
   return Readable.toWeb(stream);
+}
+
+export async function enqueueNewItem(inputUrl: string) {
+  console.log('enqueue', inputUrl);
+  const newId = config.items.reduce((acc, item) => Math.max(acc, item.id), 0) + 1;
+  const newItem: Video = {
+    duration: 0,
+    id: newId,
+    images: {
+      maxIndex: 0,
+      interval: 0,
+      removed: [],
+    },
+    originalVideoPath: inputUrl,
+    processedPath: '',
+    summary: '',
+    title: '',
+    viewerData: {
+      progress: 0,
+      read: false,
+      processStatus: 'queued',
+    },
+  };
+
+  config.items.push(newItem);
+
+  queueItem(newId, inputUrl);
+
+  await saveConfig();
+}
+
+export async function reprocessItem(id: number) {
+  console.log('reprocess', id);
+  const item = getItem(id);
+  if (!item) {
+    return null;
+  }
+
+  queueItem(id, item.originalVideoPath);
 }
