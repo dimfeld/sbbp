@@ -47,7 +47,9 @@
     </section>
   {/if}
 
-  <div class="grid grid-cols-[auto_auto] gap-x-4 gap-y-2 mt-8 font-serif leading-relaxed">
+  <div
+    class="grid lg:grid-cols-[auto_auto] grid-cols-1 gap-x-4 gap-y-2 mt-8 font-serif leading-relaxed"
+  >
     {#each aligned as chunk}
       <div class="max-w-[65ch]">{chunk.text}</div>
       <div class="flex flex-col gap-2 max-w-lg">
