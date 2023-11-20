@@ -2,7 +2,7 @@
   import { page } from '$app/stores';
   import { align } from '$lib/align';
   import { Button } from '$lib/components/ui/button';
-  import MarkReadButton from './MarkReadButton.svelte';
+  import DocSettings from './DocSettings.svelte';
 
   export let data;
 
@@ -42,10 +42,7 @@
     class="flex items-start md:items-center justify-start md:justify-between gap-4 w-full flex-col md:flex-row"
   >
     <h1 class="text-xl">{data.item.title}</h1>
-    <div class="flex gap-4">
-      <MarkReadButton read={data.item.viewerData.read} />
-      <a href="/"><Button variant="outline">Back to Index</Button></a>
-    </div>
+    <DocSettings read={data.item.viewerData.read} />
   </header>
 
   {#if data.item.summary}
@@ -76,10 +73,7 @@
   </div>
 
   <div class="flex self-start mt-8">
-    <div class="flex gap-4">
-      <MarkReadButton read={data.item.viewerData.read} />
-      <a href="/"><Button variant="outline">Back to Index</Button></a>
-    </div>
+    <DocSettings read={data.item.viewerData.read} />
   </div>
 </main>
 
