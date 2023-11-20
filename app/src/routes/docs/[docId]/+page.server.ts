@@ -1,4 +1,5 @@
 import * as data from '$lib/server/data';
+import { updateReadState } from '$lib/server/data';
 import { error } from '@sveltejs/kit';
 
 export async function load({ params }) {
@@ -14,3 +15,12 @@ export async function load({ params }) {
     text,
   };
 }
+
+export const actions = {
+  mark_read: async (event) => {
+    const formData = await event.request.formData();
+    const id = +event.params.docId;
+    const read = formData.get('new_read') === 'true';
+    await updateReadState(+id, read);
+  },
+};

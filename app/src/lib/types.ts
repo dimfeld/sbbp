@@ -16,6 +16,7 @@ export interface TranscriptChunk {
 
 export interface VideoViewerData {
   read: boolean;
+  progress: number;
 }
 
 export interface Video {

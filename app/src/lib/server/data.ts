@@ -6,6 +6,7 @@ import * as path from 'path';
 import { Readable } from 'stream';
 
 interface Config {
+  version: number;
   items: Video[];
 }
 
@@ -14,19 +15,47 @@ const configPath = path.join(dataDir, 'config.json');
 
 let config: Config;
 
+const CONFIG_VERSION = 1;
+
+function migrateConfig(config: Config) {
+  const version = config.version ?? 0;
+
+  if (version < 1) {
+    for (let item of config.items) {
+      item.viewerData = {
+        read: false,
+        progress: 0,
+      };
+    }
+  }
+
+  // Future migrations here
+
+  config.version = CONFIG_VERSION;
+
+  return config;
+}
+
 function init() {
   try {
     config = JSON.parse(readFileSync(configPath).toString());
+
+    if (config.version ?? 0 < CONFIG_VERSION) {
+      config = migrateConfig(config);
+      saveConfig();
+    }
 
     for (let item of config.items) {
       if (!item.viewerData) {
         item.viewerData = {
           read: false,
+          progress: 0,
         };
       }
     }
   } catch (e) {
     config = {
+      version: CONFIG_VERSION,
       items: [],
     };
 
@@ -42,6 +71,23 @@ function saveConfig() {
 
 export function listItems() {
   return config.items;
+}
+
+async function updateItem(
+  docId: number,
+  updateFn: (item: Video) => Video | void
+): Promise<Video | null> {
+  let item = config.items.findIndex((item) => item.id === docId);
+  if (item < 0) {
+    return null;
+  }
+
+  const result = updateFn(config.items[item]);
+  if (result) {
+    config.items[item] = result;
+  }
+  await saveConfig();
+  return config.items[item];
 }
 
 // Currently this only takes local paths to already-processed data.
@@ -62,6 +108,7 @@ export async function loadNewItem(file: string): Promise<Video | null> {
     id,
     viewerData: {
       read: false,
+      progress: 0,
     },
     ...itemConfig,
   };
@@ -99,15 +146,16 @@ export async function reloadItem(id: number) {
   return config.items[itemIndex];
 }
 
-export async function updateReadState(docId: number, read: boolean): Promise<boolean> {
-  const item = config.items.find((item) => item.id === docId);
-  if (!item) {
-    return false;
-  }
+export async function updateReadState(docId: number, read: boolean): Promise<Video | null> {
+  return await updateItem(docId, (item) => {
+    item.viewerData.read = read;
+  });
+}
 
-  item.viewerData.read = read;
-  await saveConfig();
-  return true;
+export async function updateReadProgress(docId: number, progress: number): Promise<Video | null> {
+  return await updateItem(docId, (item) => {
+    item.viewerData.progress = progress;
+  });
 }
 
 export async function loadItem(file: string) {
