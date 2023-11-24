@@ -41,19 +41,21 @@
   <header
     class="flex items-start md:items-center justify-start md:justify-between gap-4 w-full flex-col md:flex-row"
   >
-    <h1 class="text-xl">{data.item.title}</h1>
+    <h1 class="text-3xl">{data.item.title}</h1>
     <DocSettings read={data.item.viewerData.read} />
   </header>
 
   {#if data.item.summary}
     <section>
-      <p class="text-lg">Video Summary</p>
-      <p class="whitespace-pre-wrap font-serif leading-relaxed max-w-[90ch]">{data.item.summary}</p>
+      <p class="text-2xl">Video Summary</p>
+      <p class="whitespace-pre-wrap font-serif text-xl leading-relaxed max-w-[90ch]">
+        {data.item.summary}
+      </p>
     </section>
   {/if}
 
   <div
-    class="grid lg:grid-cols-[auto_auto] grid-cols-1 gap-x-4 gap-y-2 mt-8 font-serif leading-relaxed"
+    class="grid lg:grid-cols-[auto_auto] grid-cols-1 gap-x-4 gap-y-2 mt-8 font-serif text-xl leading-relaxed"
   >
     {#each aligned as chunk}
       <div class="max-w-[65ch]">{chunk.text}</div>
