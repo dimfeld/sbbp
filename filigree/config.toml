@@ -1,0 +1,36 @@
+product_name = "SBBP"
+company_name = "Daniel Imfeld"
+
+default_auth_scope = "model"
+
+api_dir = "api"
+web_dir = "web"
+
+[server]
+dotenv = true
+hosts = ["localhost"]
+
+[formatter]
+js = ["biome", "format", "--stdin-file-path=stdin.ts" ]
+rust = ["rustfmt", "+nightly"]
+sql = ["pg_format"]
+
+[database]
+migrate_on_start = true
+
+[email]
+provider = "none"
+from = "daniel@imfeld.dev"
+
+[storage.bucket.uploads]
+bucket = "sbbp-uploads"
+provider = "disk"
+
+[storage.bucket.images]
+bucket = "sbbp-images"
+provider = "disk"
+
+[storage.provider.disk]
+type = "local"
+base_path = "storage"
+
