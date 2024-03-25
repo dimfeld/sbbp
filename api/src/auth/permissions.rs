@@ -56,6 +56,21 @@ pub const PERMISSIONS: &[PermissionInfo] = &[
         description: "Create and delete Role objects",
         key: "Role::owner",
     },
+    PermissionInfo {
+        name: "Read Videos",
+        description: "List and read Video objects",
+        key: "Video::read",
+    },
+    PermissionInfo {
+        name: "Write Videos",
+        description: "Write Video objects",
+        key: "Video::write",
+    },
+    PermissionInfo {
+        name: "Administer Videos",
+        description: "Create and delete Video objects",
+        key: "Video::owner",
+    },
 ];
 
 pub async fn list_permissions(_authed: Authed) -> impl IntoResponse {

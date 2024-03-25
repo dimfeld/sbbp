@@ -1,0 +1,52 @@
+name = "Video"
+endpoints = true
+allow_id_in_create = true
+
+[[fields]]
+name = "processing_state"
+type = "text"
+rust_type = "crate::models::video::VideoProcessingState"
+
+[[fields]]
+name = "url"
+type = "text"
+nullable = true
+
+[[fields]]
+name = "images"
+type = "json"
+nullable = true
+
+[[fields]]
+name = "title"
+type = "text"
+nullable = true
+
+[[fields]]
+name = "duration"
+description = "Duration in seconds"
+type = "int"
+nullable = true
+
+[[fields]]
+name = "read"
+type = "boolean"
+default_sql = "false"
+indexed = true
+
+[[fields]]
+name = "progress"
+type = "int"
+default_sql = "0"
+
+[[fields]]
+name = "summary"
+description = "Generated summary of the video"
+type = "text"
+nullable = true
+
+[[fields]]
+name = "processed_path"
+type = "text"
+nullable = true
+

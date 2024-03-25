@@ -20,6 +20,8 @@ const USER_DEFAULT_PERMISSIONS: &[&str] = &[
     "Organization::write",
     "Role::read",
     "Role::write",
+    "Video::read",
+    "Video::write",
 ];
 
 pub struct CreatedOrganization {

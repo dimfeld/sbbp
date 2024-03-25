@@ -55,6 +55,7 @@ pub struct ServerStateInner {
     pub filigree: Arc<FiligreeState>,
     /// The Postgres database connection pool
     pub db: PgPool,
+
     /// Object storage providers
     pub storage: storage::AppStorage,
 }
@@ -77,7 +78,16 @@ impl std::ops::Deref for ServerStateInner {
     }
 }
 
-#[derive(Clone)]
+impl std::fmt::Debug for ServerStateInner {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ServerStateInner")
+            .field("production", &self.production)
+            .field("insecure", &self.insecure)
+            .finish_non_exhaustive()
+    }
+}
+
+#[derive(Clone, Debug)]
 pub struct ServerState(Arc<ServerStateInner>);
 
 impl std::ops::Deref for ServerState {
@@ -116,6 +126,7 @@ pub struct Server {
     pub app: Router<()>,
     /// The server state.
     pub state: ServerState,
+    /// The server's TCP listener
     pub listener: tokio::net::TcpListener,
 }
 
@@ -132,11 +143,11 @@ impl Server {
         self,
         shutdown: impl Future<Output = ()> + Send + 'static,
     ) -> Result<(), Report<Error>> {
+        event!(Level::INFO, "Shutting down server");
         axum::serve(self.listener, self.app)
             .with_graceful_shutdown(shutdown)
             .await
             .change_context(Error::ServerStart)?;
-        event!(Level::INFO, "Shutting down server");
 
         // Can do extra shutdown tasks here.
 
@@ -222,6 +233,7 @@ pub async fn create_server(config: Config) -> Result<Server, Report<Error>> {
         .user_agent("SBBP")
         .build()
         .unwrap();
+
     let state = ServerState(Arc::new(ServerStateInner {
         production,
         filigree: Arc::new(FiligreeState {
