@@ -1,5 +1,6 @@
 use clap::{Args, Subcommand};
 use error_stack::{Report, ResultExt};
+use ts_rs::TS;
 
 use crate::Error;
 
@@ -12,6 +13,7 @@ pub struct UtilCommand {
 #[derive(Debug, Subcommand)]
 pub enum UtilSubcommand {
     HashPassword(HashPasswordCommand),
+    SyncTypes,
 }
 
 #[derive(Args, Debug)]
@@ -29,8 +31,24 @@ impl UtilCommand {
                     .0;
                 println!("{hash}");
             }
+            UtilSubcommand::SyncTypes => sync_types()?,
         }
 
         Ok(())
     }
+}
+
+fn sync_types() -> Result<(), Report<Error>> {
+    let mut output = vec![];
+
+    let value = crate::models::video::VideoProcessingState::export_to_string()
+        .change_context(Error::TypeExport)
+        .attach_printable("crate::models::video::VideoProcessingState")?;
+    output.push(value);
+
+    let output = output.join("\n\n");
+    let output_path = "../web/src/lib/api_types.ts";
+    std::fs::write(output_path, output.as_bytes()).change_context(Error::TypeExport)?;
+
+    Ok(())
 }

@@ -12,6 +12,9 @@ export const VideoSchema = z.object({
 	images: z.any().optional(),
 	title: z.string().optional(),
 	duration: z.number().int().optional(),
+	author: z.string().optional(),
+	date: z.string().optional(),
+	metadata: z.any().optional(),
 	read: z.boolean(),
 	progress: z.number().int(),
 	summary: z.string().optional(),
@@ -34,6 +37,9 @@ export const VideoCreatePayloadAndUpdatePayloadSchema = z.object({
 	images: z.any().optional(),
 	title: z.string().optional(),
 	duration: z.number().int().optional(),
+	author: z.string().optional(),
+	date: z.string().optional(),
+	metadata: z.any().optional(),
 	read: z.boolean(),
 	progress: z.number().int(),
 	summary: z.string().optional(),
@@ -139,6 +145,30 @@ export const VideoModel: ModelDefinition<typeof VideoSchema> = {
 			type: "integer",
 			label: "Duration",
 			description: "Duration in seconds",
+			constraints: {
+				required: false,
+			},
+		},
+		{
+			name: "author",
+			type: "text",
+			label: "Author",
+			constraints: {
+				required: false,
+			},
+		},
+		{
+			name: "date",
+			type: "date",
+			label: "Date",
+			constraints: {
+				required: false,
+			},
+		},
+		{
+			name: "metadata",
+			type: "object",
+			label: "Metadata",
 			constraints: {
 				required: false,
 			},

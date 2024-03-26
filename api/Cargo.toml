@@ -16,6 +16,7 @@ bytes = "1.5.0"
 chrono = "0.4.33"
 clap = { version = "4.4.11", features = ["env", "derive"] }
 dotenvy = "0.15.7"
+effectum = "0.5.1"
 error-stack = { version = "0.4.1", features = ["spantrace"] }
 eyre = "0.6.11"
 filigree = { path = "../../filigree/filigree" }
@@ -33,12 +34,14 @@ sqlx = { version = "0.7.3", features = ["chrono", "postgres"] }
 sqlx-transparent-json-decode = "2.2.0"
 tera = "1.19.1"
 thiserror = "1.0.56"
+time = "0.3.34"
 tokio = { version = "1.36.0", features = ["full"] }
 tower = "0.4.13"
 tower-cookies = "0.10.0"
 tower-http = { version = "0.5.1", features = ["full"] }
 tracing = "0.1.40"
 tracing-subscriber = { version = "0.3.18", features = ["chrono"] }
+ts-rs = { version = "8.1.0", features = ["serde-compat", "chrono-impl", "serde-json-impl", "url-impl", "uuid-impl", "import-esm"] }
 url = "2.5.0"
 uuid = "1.6.1"
 

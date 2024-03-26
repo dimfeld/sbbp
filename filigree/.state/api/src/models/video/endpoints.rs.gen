@@ -259,6 +259,30 @@ mod test {
                 "create result field duration"
             );
             assert_eq!(
+                result["author"],
+                serde_json::to_value(&added.author).unwrap(),
+                "field author"
+            );
+
+            assert_eq!(payload.author, added.author, "create result field author");
+            assert_eq!(
+                result["date"],
+                serde_json::to_value(&added.date).unwrap(),
+                "field date"
+            );
+
+            assert_eq!(payload.date, added.date, "create result field date");
+            assert_eq!(
+                result["metadata"],
+                serde_json::to_value(&added.metadata).unwrap(),
+                "field metadata"
+            );
+
+            assert_eq!(
+                payload.metadata, added.metadata,
+                "create result field metadata"
+            );
+            assert_eq!(
                 result["read"],
                 serde_json::to_value(&added.read).unwrap(),
                 "field read"
@@ -361,6 +385,21 @@ mod test {
                 result["duration"],
                 serde_json::to_value(&added.duration).unwrap(),
                 "list result field duration"
+            );
+            assert_eq!(
+                result["author"],
+                serde_json::to_value(&added.author).unwrap(),
+                "list result field author"
+            );
+            assert_eq!(
+                result["date"],
+                serde_json::to_value(&added.date).unwrap(),
+                "list result field date"
+            );
+            assert_eq!(
+                result["metadata"],
+                serde_json::to_value(&added.metadata).unwrap(),
+                "list result field metadata"
             );
             assert_eq!(
                 result["read"],
@@ -527,6 +566,30 @@ mod test {
             "create result field duration"
         );
         assert_eq!(
+            result["author"],
+            serde_json::to_value(&added.author).unwrap(),
+            "get result field author"
+        );
+
+        assert_eq!(added.author, payload.author, "create result field author");
+        assert_eq!(
+            result["date"],
+            serde_json::to_value(&added.date).unwrap(),
+            "get result field date"
+        );
+
+        assert_eq!(added.date, payload.date, "create result field date");
+        assert_eq!(
+            result["metadata"],
+            serde_json::to_value(&added.metadata).unwrap(),
+            "get result field metadata"
+        );
+
+        assert_eq!(
+            added.metadata, payload.metadata,
+            "create result field metadata"
+        );
+        assert_eq!(
             result["read"],
             serde_json::to_value(&added.read).unwrap(),
             "get result field read"
@@ -626,6 +689,21 @@ mod test {
             "get result field duration"
         );
         assert_eq!(
+            result["author"],
+            serde_json::to_value(&added.author).unwrap(),
+            "get result field author"
+        );
+        assert_eq!(
+            result["date"],
+            serde_json::to_value(&added.date).unwrap(),
+            "get result field date"
+        );
+        assert_eq!(
+            result["metadata"],
+            serde_json::to_value(&added.metadata).unwrap(),
+            "get result field metadata"
+        );
+        assert_eq!(
             result["read"],
             serde_json::to_value(&added.read).unwrap(),
             "get result field read"
@@ -722,6 +800,21 @@ mod test {
             "field duration"
         );
         assert_eq!(
+            updated["author"],
+            serde_json::to_value(&update_payload.author).unwrap(),
+            "field author"
+        );
+        assert_eq!(
+            updated["date"],
+            serde_json::to_value(&update_payload.date).unwrap(),
+            "field date"
+        );
+        assert_eq!(
+            updated["metadata"],
+            serde_json::to_value(&update_payload.metadata).unwrap(),
+            "field metadata"
+        );
+        assert_eq!(
             updated["read"],
             serde_json::to_value(&update_payload.read).unwrap(),
             "field read"
@@ -804,6 +897,21 @@ mod test {
             non_updated["duration"],
             serde_json::to_value(&added_objects[0].1.duration).unwrap(),
             "field duration"
+        );
+        assert_eq!(
+            non_updated["author"],
+            serde_json::to_value(&added_objects[0].1.author).unwrap(),
+            "field author"
+        );
+        assert_eq!(
+            non_updated["date"],
+            serde_json::to_value(&added_objects[0].1.date).unwrap(),
+            "field date"
+        );
+        assert_eq!(
+            non_updated["metadata"],
+            serde_json::to_value(&added_objects[0].1.metadata).unwrap(),
+            "field metadata"
         );
         assert_eq!(
             non_updated["read"],
@@ -890,6 +998,21 @@ mod test {
             "field duration from create response"
         );
         assert_eq!(
+            created_result["author"],
+            serde_json::to_value(&create_payload.author).unwrap(),
+            "field author from create response"
+        );
+        assert_eq!(
+            created_result["date"],
+            serde_json::to_value(&create_payload.date).unwrap(),
+            "field date from create response"
+        );
+        assert_eq!(
+            created_result["metadata"],
+            serde_json::to_value(&create_payload.metadata).unwrap(),
+            "field metadata from create response"
+        );
+        assert_eq!(
             created_result["read"],
             serde_json::to_value(&create_payload.read).unwrap(),
             "field read from create response"
@@ -960,6 +1083,18 @@ mod test {
         assert_eq!(
             get_result["duration"], created_result["duration"],
             "field duration from get response"
+        );
+        assert_eq!(
+            get_result["author"], created_result["author"],
+            "field author from get response"
+        );
+        assert_eq!(
+            get_result["date"], created_result["date"],
+            "field date from get response"
+        );
+        assert_eq!(
+            get_result["metadata"], created_result["metadata"],
+            "field metadata from get response"
         );
         assert_eq!(
             get_result["read"], created_result["read"],

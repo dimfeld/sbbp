@@ -72,6 +72,9 @@ pub async fn start_app_with_options(
     error_stack::Report::set_color_mode(error_stack::fmt::ColorMode::None);
     filigree::tracing_config::test::init();
 
+    let queue_dir = temp_dir::TempDir::new().unwrap();
+    let queue_path = queue_dir.child("queue.db");
+
     let (shutdown_tx, shutdown_rx) = tokio::sync::oneshot::channel();
     // Make the shutdown future resolve to () so the type matches what Axum expects.
     let shutdown_rx = shutdown_rx.map(|_| ());
@@ -112,7 +115,8 @@ pub async fn start_app_with_options(
             crate::emails::create_tera(),
             Box::new(email_service),
         ),
-
+        queue_path,
+        init_recurring_jobs: false,
         storage: crate::storage::AppStorageConfig::new_in_memory(),
     };
 

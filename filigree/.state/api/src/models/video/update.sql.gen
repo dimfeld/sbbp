@@ -16,10 +16,13 @@ SET
   images = $6,
   title = $7,
   duration = $8,
-  read = $9,
-  progress = $10,
-  summary = $11,
-  processed_path = $12,
+  author = $9,
+  date = $10,
+  metadata = $11,
+  read = $12,
+  progress = $13,
+  summary = $14,
+  processed_path = $15,
   updated_at = now()
 FROM
   permissions

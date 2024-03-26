@@ -6,6 +6,9 @@ INSERT INTO videos (
   images,
   title,
   duration,
+  author,
+  date,
+  metadata,
   read,
   progress,
   summary,
@@ -21,7 +24,10 @@ VALUES (
   $8,
   $9,
   $10,
-  $11)
+  $11,
+  $12,
+  $13,
+  $14)
 RETURNING
   id AS "id: VideoId",
   organization_id AS "organization_id: crate::models::organization::OrganizationId",
@@ -32,6 +38,9 @@ RETURNING
   images,
   title,
   duration,
+  author,
+  date,
+  metadata,
   read,
   progress,
   summary,

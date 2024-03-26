@@ -5,6 +5,7 @@ use serde::{
     Deserialize, Serialize,
 };
 use sqlx_transparent_json_decode::sqlx_json_decode;
+use ts_rs::TS;
 
 use super::VideoId;
 use crate::models::organization::OrganizationId;
@@ -18,6 +19,7 @@ use crate::models::organization::OrganizationId;
     Clone,
     PartialEq,
     Eq,
+    TS,
     schemars::JsonSchema,
     sqlx::Type,
 )]
@@ -25,7 +27,7 @@ use crate::models::organization::OrganizationId;
 #[serde(rename_all = "snake_case")]
 pub enum VideoProcessingState {
     #[default]
-    Initial,
+    Queued,
     Downloaded,
     Extracted,
     Summarized,
@@ -43,6 +45,9 @@ pub struct Video {
     pub images: Option<serde_json::Value>,
     pub title: Option<String>,
     pub duration: Option<i32>,
+    pub author: Option<String>,
+    pub date: Option<chrono::NaiveDate>,
+    pub metadata: Option<serde_json::Value>,
     pub read: bool,
     pub progress: i32,
     pub summary: Option<String>,
@@ -96,6 +101,18 @@ impl Video {
         None
     }
 
+    pub fn default_author() -> Option<String> {
+        None
+    }
+
+    pub fn default_date() -> Option<chrono::NaiveDate> {
+        None
+    }
+
+    pub fn default_metadata() -> Option<serde_json::Value> {
+        None
+    }
+
     pub fn default_read() -> bool {
         <bool as Default>::default().into()
     }
@@ -127,6 +144,9 @@ impl Default for Video {
             images: Self::default_images(),
             title: Self::default_title(),
             duration: Self::default_duration(),
+            author: Self::default_author(),
+            date: Self::default_date(),
+            metadata: Self::default_metadata(),
             read: Self::default_read(),
             progress: Self::default_progress(),
             summary: Self::default_summary(),
@@ -141,7 +161,7 @@ impl Serialize for Video {
     where
         S: Serializer,
     {
-        let mut state = serializer.serialize_struct("Video", 14)?;
+        let mut state = serializer.serialize_struct("Video", 17)?;
         state.serialize_field("id", &self.id)?;
         state.serialize_field("organization_id", &self.organization_id)?;
         state.serialize_field("updated_at", &self.updated_at)?;
@@ -151,6 +171,9 @@ impl Serialize for Video {
         state.serialize_field("images", &self.images)?;
         state.serialize_field("title", &self.title)?;
         state.serialize_field("duration", &self.duration)?;
+        state.serialize_field("author", &self.author)?;
+        state.serialize_field("date", &self.date)?;
+        state.serialize_field("metadata", &self.metadata)?;
         state.serialize_field("read", &self.read)?;
         state.serialize_field("progress", &self.progress)?;
         state.serialize_field("summary", &self.summary)?;
@@ -169,6 +192,9 @@ pub struct VideoCreatePayloadAndUpdatePayload {
     pub images: Option<serde_json::Value>,
     pub title: Option<String>,
     pub duration: Option<i32>,
+    pub author: Option<String>,
+    pub date: Option<chrono::NaiveDate>,
+    pub metadata: Option<serde_json::Value>,
     pub read: bool,
     pub progress: i32,
     pub summary: Option<String>,
@@ -207,6 +233,18 @@ impl VideoCreatePayloadAndUpdatePayload {
         None
     }
 
+    pub fn default_author() -> Option<String> {
+        None
+    }
+
+    pub fn default_date() -> Option<chrono::NaiveDate> {
+        None
+    }
+
+    pub fn default_metadata() -> Option<serde_json::Value> {
+        None
+    }
+
     pub fn default_read() -> bool {
         <bool as Default>::default().into()
     }
@@ -233,6 +271,9 @@ impl Default for VideoCreatePayloadAndUpdatePayload {
             images: Self::default_images(),
             title: Self::default_title(),
             duration: Self::default_duration(),
+            author: Self::default_author(),
+            date: Self::default_date(),
+            metadata: Self::default_metadata(),
             read: Self::default_read(),
             progress: Self::default_progress(),
             summary: Self::default_summary(),

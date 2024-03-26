@@ -6,6 +6,11 @@ default_auth_scope = "model"
 api_dir = "api"
 web_dir = "web"
 
+
+shared_types = [
+  "crate::models::video::VideoProcessingState",
+]
+
 [server]
 dotenv = true
 hosts = ["localhost"]
@@ -33,4 +38,29 @@ provider = "disk"
 [storage.provider.disk]
 type = "local"
 base_path = "storage"
+
+
+[job.download]
+worker = "download"
+
+[job.extract]
+worker = "ffmpeg"
+
+[job.analyze]
+worker = "analyze"
+
+[job.summarize]
+worker = "summarize"
+
+[worker.download]
+max_concurrency = 2
+
+[worker.ffmpeg]
+max_concurrency = 4
+
+[worker.analyze]
+max_concurrency = 4
+
+[worker.summarize]
+max_concurrency = 2
 

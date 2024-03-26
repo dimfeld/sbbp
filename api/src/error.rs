@@ -55,6 +55,9 @@ pub enum Error {
     /// An invalid Host header was passed
     #[error("Invalid host")]
     InvalidHostHeader,
+
+    #[error("Type Export Error")]
+    TypeExport,
 }
 
 impl From<Report<Error>> for Error {
@@ -138,6 +141,7 @@ impl HttpError for Error {
             Error::MissingPermission(_) => FilErrorKind::Unauthenticated.as_str(),
             Error::InvalidHostHeader => FilErrorKind::InvalidHostHeader.as_str(),
             Error::Storage => FilErrorKind::StorageWrite.as_str(),
+            Error::TypeExport => "cli",
         }
     }
 
@@ -178,6 +182,7 @@ impl HttpError for Error {
             Error::Login => StatusCode::UNAUTHORIZED,
             Error::InvalidHostHeader => StatusCode::BAD_REQUEST,
             Error::Storage => StatusCode::INTERNAL_SERVER_ERROR,
+            Error::TypeExport => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
 
