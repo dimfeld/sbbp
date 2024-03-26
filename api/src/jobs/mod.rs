@@ -12,6 +12,32 @@ use futures::FutureExt;
 
 use crate::server::ServerState;
 
+#[derive(thiserror::Error, Debug)]
+enum JobError {
+    #[error("Failed to read payload")]
+    Payload,
+    #[error("Failed to start video downloader")]
+    StartingDownloader,
+    #[error("Reading video.info.json")]
+    ReadingInfoJson,
+    #[error("Uploading to storage")]
+    StorageUpload,
+    #[error("Downloading from storage")]
+    StorageDownload,
+    #[error("Database error")]
+    Db,
+    #[error("Queue error")]
+    Queue,
+    #[error("Failed to create temporary directory")]
+    TempDir,
+    #[error("Failed to start ffmpeg")]
+    StartingFfmpeg,
+    #[error("Failed to extract audio")]
+    ExtractingAudio,
+    #[error("Failed to extract images")]
+    ExtractingImages,
+}
+
 pub struct QueueWorkers {
     pub analyze: Worker,
     pub download: Worker,

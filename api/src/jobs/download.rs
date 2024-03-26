@@ -6,23 +6,11 @@ use effectum::{JobBuilder, JobRunner, Queue, RecurringJobSchedule, RunningJob};
 use error_stack::ResultExt;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use temp_dir::TempDir;
 use tokio::io::AsyncWriteExt;
 
+use super::JobError;
 use crate::{models::video::VideoId, server::ServerState};
-
-#[derive(thiserror::Error, Debug)]
-enum DownloadJobError {
-    #[error("Failed to read payload")]
-    Payload,
-    #[error("Failed to start downloader")]
-    StartingDownloader,
-    #[error("Reading video.info.json")]
-    ReadingInfoJson,
-    #[error("Uploading to storage")]
-    Uploading,
-    #[error("Database error")]
-    Db,
-}
 
 /// The payload data for the download background job
 #[derive(Debug, Serialize, Deserialize)]
@@ -44,48 +32,46 @@ struct InfoJson {
 }
 
 /// Run the download background job
-async fn run(
-    job: RunningJob,
-    state: ServerState,
-) -> Result<(), error_stack::Report<DownloadJobError>> {
-    let payload: DownloadJobPayload = job
-        .json_payload()
-        .change_context(DownloadJobError::Payload)?;
+async fn run(job: RunningJob, state: ServerState) -> Result<(), error_stack::Report<JobError>> {
+    let payload: DownloadJobPayload = job.json_payload().change_context(JobError::Payload)?;
 
-    let temp = std::env::temp_dir();
+    let temp_dir = TempDir::new().change_context(JobError::TempDir)?;
+    let download_dir = temp_dir.path();
     let dirname = payload
         .download_url
         .chars()
         .map(|c| if c.is_alphanumeric() { c } else { '_' })
         .collect::<String>();
-    let download_dir = temp.join(&dirname);
     let video_path_template = download_dir.join("video.%(ext)s");
+    // Place the infojson at a fixed path
     let infojson_path_template = download_dir.join("infojson:video");
 
     let download_process = tokio::process::Command::new("yt-dlp")
-        .arg("--write-info-json")
-        .arg("--output")
-        .arg(&video_path_template)
-        // Place the infojson at a fixed path
-        .arg("--output")
-        .arg(&infojson_path_template)
-        .arg(&payload.download_url)
+        .args([
+            "--write-info-json",
+            "--output",
+            video_path_template.to_string_lossy().as_ref(),
+            "--output",
+            infojson_path_template.to_string_lossy().as_ref(),
+            &payload.download_url,
+        ])
         .stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::piped())
         .spawn()
-        .change_context(DownloadJobError::StartingDownloader)?;
+        .change_context(JobError::StartingDownloader)?;
 
     let result = download_process
         .wait_with_output()
         .await
-        .change_context(DownloadJobError::StartingDownloader)?;
+        .change_context(JobError::StartingDownloader)?;
+    // check success
 
     let info_json_path = download_dir.join("video.info.json");
     let info_json_buffer = tokio::fs::read(&info_json_path)
         .await
-        .change_context(DownloadJobError::ReadingInfoJson)?;
-    let info_json: InfoJson = serde_json::from_slice(&info_json_buffer)
-        .change_context(DownloadJobError::ReadingInfoJson)?;
+        .change_context(JobError::ReadingInfoJson)?;
+    let info_json: InfoJson =
+        serde_json::from_slice(&info_json_buffer).change_context(JobError::ReadingInfoJson)?;
 
     let info_json_bytes = Bytes::from(info_json_buffer);
     let infojson_storage_path = format!("{}/video.info.json", download_dir.display());
@@ -94,33 +80,33 @@ async fn run(
         .uploads
         .put(&infojson_storage_path, info_json_bytes)
         .await
-        .change_context(DownloadJobError::Uploading)
+        .change_context(JobError::StorageUpload)
         .attach_printable(infojson_storage_path)?;
 
     let video_fs_path = format!("{}/video.{}", download_dir.display(), info_json.ext);
     let video_storage_path = format!("{}/video.{}", dirname, info_json.ext);
     let video_reader = tokio::fs::File::open(&video_fs_path)
         .await
-        .change_context(DownloadJobError::Uploading)
+        .change_context(JobError::StorageUpload)
         .attach_printable(video_fs_path)?;
-    let mut video_reader = tokio::io::BufReader::with_capacity(32 * 1024 * 1024, video_reader);
+    let mut video_reader = tokio::io::BufReader::with_capacity(8 * 1024 * 1024, video_reader);
 
     let (id, mut writer) = state
         .storage
         .uploads
         .put_multipart(&video_storage_path)
         .await
-        .change_context(DownloadJobError::Uploading)
+        .change_context(JobError::StorageUpload)
         .attach_printable_lazy(|| video_storage_path.clone())?;
 
     tokio::io::copy_buf(&mut video_reader, &mut writer)
         .await
-        .change_context(DownloadJobError::Uploading)
+        .change_context(JobError::StorageUpload)
         .attach_printable_lazy(|| video_storage_path.clone())?;
     writer
         .flush()
         .await
-        .change_context(DownloadJobError::Uploading)
+        .change_context(JobError::StorageUpload)
         .attach_printable_lazy(|| video_storage_path.clone())?;
 
     sqlx::query!(
@@ -140,7 +126,17 @@ async fn run(
     )
     .execute(&state.db)
     .await
-    .change_context(DownloadJobError::Db)?;
+    .change_context(JobError::Db)?;
+
+    super::extract::enqueue(
+        &state,
+        &super::extract::ExtractJobPayload {
+            id: payload.id,
+            storage_location: video_storage_path,
+        },
+    )
+    .await
+    .change_context(JobError::Queue)?;
 
     Ok(())
 }
