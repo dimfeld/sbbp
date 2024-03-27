@@ -235,13 +235,6 @@ mod test {
 
             assert_eq!(payload.url, added.url, "create result field url");
             assert_eq!(
-                result["images"],
-                serde_json::to_value(&added.images).unwrap(),
-                "field images"
-            );
-
-            assert_eq!(payload.images, added.images, "create result field images");
-            assert_eq!(
                 result["title"],
                 serde_json::to_value(&added.title).unwrap(),
                 "field title"
@@ -298,6 +291,23 @@ mod test {
             assert_eq!(
                 payload.progress, added.progress,
                 "create result field progress"
+            );
+            assert_eq!(
+                result["images"],
+                serde_json::to_value(&added.images).unwrap(),
+                "field images"
+            );
+
+            assert_eq!(payload.images, added.images, "create result field images");
+            assert_eq!(
+                result["transcript"],
+                serde_json::to_value(&added.transcript).unwrap(),
+                "field transcript"
+            );
+
+            assert_eq!(
+                payload.transcript, added.transcript,
+                "create result field transcript"
             );
             assert_eq!(
                 result["summary"],
@@ -372,11 +382,6 @@ mod test {
                 "list result field url"
             );
             assert_eq!(
-                result["images"],
-                serde_json::to_value(&added.images).unwrap(),
-                "list result field images"
-            );
-            assert_eq!(
                 result["title"],
                 serde_json::to_value(&added.title).unwrap(),
                 "list result field title"
@@ -410,6 +415,16 @@ mod test {
                 result["progress"],
                 serde_json::to_value(&added.progress).unwrap(),
                 "list result field progress"
+            );
+            assert_eq!(
+                result["images"],
+                serde_json::to_value(&added.images).unwrap(),
+                "list result field images"
+            );
+            assert_eq!(
+                result["transcript"],
+                serde_json::to_value(&added.transcript).unwrap(),
+                "list result field transcript"
             );
             assert_eq!(
                 result["summary"],
@@ -542,13 +557,6 @@ mod test {
 
         assert_eq!(added.url, payload.url, "create result field url");
         assert_eq!(
-            result["images"],
-            serde_json::to_value(&added.images).unwrap(),
-            "get result field images"
-        );
-
-        assert_eq!(added.images, payload.images, "create result field images");
-        assert_eq!(
             result["title"],
             serde_json::to_value(&added.title).unwrap(),
             "get result field title"
@@ -605,6 +613,23 @@ mod test {
         assert_eq!(
             added.progress, payload.progress,
             "create result field progress"
+        );
+        assert_eq!(
+            result["images"],
+            serde_json::to_value(&added.images).unwrap(),
+            "get result field images"
+        );
+
+        assert_eq!(added.images, payload.images, "create result field images");
+        assert_eq!(
+            result["transcript"],
+            serde_json::to_value(&added.transcript).unwrap(),
+            "get result field transcript"
+        );
+
+        assert_eq!(
+            added.transcript, payload.transcript,
+            "create result field transcript"
         );
         assert_eq!(
             result["summary"],
@@ -674,11 +699,6 @@ mod test {
             "get result field url"
         );
         assert_eq!(
-            result["images"],
-            serde_json::to_value(&added.images).unwrap(),
-            "get result field images"
-        );
-        assert_eq!(
             result["title"],
             serde_json::to_value(&added.title).unwrap(),
             "get result field title"
@@ -712,6 +732,16 @@ mod test {
             result["progress"],
             serde_json::to_value(&added.progress).unwrap(),
             "get result field progress"
+        );
+        assert_eq!(
+            result["images"],
+            serde_json::to_value(&added.images).unwrap(),
+            "get result field images"
+        );
+        assert_eq!(
+            result["transcript"],
+            serde_json::to_value(&added.transcript).unwrap(),
+            "get result field transcript"
         );
         assert_eq!(
             result["summary"],
@@ -785,11 +815,6 @@ mod test {
             "field url"
         );
         assert_eq!(
-            updated["images"],
-            serde_json::to_value(&update_payload.images).unwrap(),
-            "field images"
-        );
-        assert_eq!(
             updated["title"],
             serde_json::to_value(&update_payload.title).unwrap(),
             "field title"
@@ -823,6 +848,16 @@ mod test {
             updated["progress"],
             serde_json::to_value(&update_payload.progress).unwrap(),
             "field progress"
+        );
+        assert_eq!(
+            updated["images"],
+            serde_json::to_value(&update_payload.images).unwrap(),
+            "field images"
+        );
+        assert_eq!(
+            updated["transcript"],
+            serde_json::to_value(&update_payload.transcript).unwrap(),
+            "field transcript"
         );
         assert_eq!(
             updated["summary"],
@@ -884,11 +919,6 @@ mod test {
             "field url"
         );
         assert_eq!(
-            non_updated["images"],
-            serde_json::to_value(&added_objects[0].1.images).unwrap(),
-            "field images"
-        );
-        assert_eq!(
             non_updated["title"],
             serde_json::to_value(&added_objects[0].1.title).unwrap(),
             "field title"
@@ -922,6 +952,16 @@ mod test {
             non_updated["progress"],
             serde_json::to_value(&added_objects[0].1.progress).unwrap(),
             "field progress"
+        );
+        assert_eq!(
+            non_updated["images"],
+            serde_json::to_value(&added_objects[0].1.images).unwrap(),
+            "field images"
+        );
+        assert_eq!(
+            non_updated["transcript"],
+            serde_json::to_value(&added_objects[0].1.transcript).unwrap(),
+            "field transcript"
         );
         assert_eq!(
             non_updated["summary"],
@@ -983,11 +1023,6 @@ mod test {
             "field url from create response"
         );
         assert_eq!(
-            created_result["images"],
-            serde_json::to_value(&create_payload.images).unwrap(),
-            "field images from create response"
-        );
-        assert_eq!(
             created_result["title"],
             serde_json::to_value(&create_payload.title).unwrap(),
             "field title from create response"
@@ -1021,6 +1056,16 @@ mod test {
             created_result["progress"],
             serde_json::to_value(&create_payload.progress).unwrap(),
             "field progress from create response"
+        );
+        assert_eq!(
+            created_result["images"],
+            serde_json::to_value(&create_payload.images).unwrap(),
+            "field images from create response"
+        );
+        assert_eq!(
+            created_result["transcript"],
+            serde_json::to_value(&create_payload.transcript).unwrap(),
+            "field transcript from create response"
         );
         assert_eq!(
             created_result["summary"],
@@ -1073,10 +1118,6 @@ mod test {
             "field url from get response"
         );
         assert_eq!(
-            get_result["images"], created_result["images"],
-            "field images from get response"
-        );
-        assert_eq!(
             get_result["title"], created_result["title"],
             "field title from get response"
         );
@@ -1103,6 +1144,14 @@ mod test {
         assert_eq!(
             get_result["progress"], created_result["progress"],
             "field progress from get response"
+        );
+        assert_eq!(
+            get_result["images"], created_result["images"],
+            "field images from get response"
+        );
+        assert_eq!(
+            get_result["transcript"], created_result["transcript"],
+            "field transcript from get response"
         );
         assert_eq!(
             get_result["summary"], created_result["summary"],

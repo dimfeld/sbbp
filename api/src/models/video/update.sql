@@ -13,16 +13,17 @@ UPDATE
 SET
   processing_state = $4,
   url = $5,
-  images = $6,
-  title = $7,
-  duration = $8,
-  author = $9,
-  date = $10,
-  metadata = $11,
-  read = $12,
-  progress = $13,
-  summary = $14,
-  processed_path = $15,
+  title = $6,
+  duration = $7,
+  author = $8,
+  date = $9,
+  metadata = $10,
+  read = $11,
+  progress = $12,
+  images = $13,
+  transcript = $14,
+  summary = $15,
+  processed_path = $16,
   updated_at = now()
 FROM
   permissions

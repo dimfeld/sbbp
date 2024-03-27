@@ -28,10 +28,22 @@ use crate::models::organization::OrganizationId;
 pub enum VideoProcessingState {
     #[default]
     Queued,
+    Downloading,
     Downloaded,
-    Extracted,
-    Summarized,
+    Processing,
+    Ready,
 }
+
+#[derive(
+    Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq, TS, schemars::JsonSchema,
+)]
+pub struct VideoImages {
+    pub max_index: usize,
+    pub interval: usize,
+    pub removed: Vec<u32>,
+}
+
+sqlx_json_decode!(VideoImages);
 
 #[derive(Deserialize, Debug, Clone, schemars::JsonSchema, sqlx::FromRow)]
 
@@ -42,7 +54,6 @@ pub struct Video {
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub processing_state: crate::models::video::VideoProcessingState,
     pub url: Option<String>,
-    pub images: Option<serde_json::Value>,
     pub title: Option<String>,
     pub duration: Option<i32>,
     pub author: Option<String>,
@@ -50,6 +61,8 @@ pub struct Video {
     pub metadata: Option<serde_json::Value>,
     pub read: bool,
     pub progress: i32,
+    pub images: Option<crate::models::video::VideoImages>,
+    pub transcript: Option<serde_json::Value>,
     pub summary: Option<String>,
     pub processed_path: Option<String>,
     pub _permission: ObjectPermission,
@@ -89,10 +102,6 @@ impl Video {
         None
     }
 
-    pub fn default_images() -> Option<serde_json::Value> {
-        None
-    }
-
     pub fn default_title() -> Option<String> {
         None
     }
@@ -121,6 +130,14 @@ impl Video {
         <i32 as Default>::default().into()
     }
 
+    pub fn default_images() -> Option<crate::models::video::VideoImages> {
+        None
+    }
+
+    pub fn default_transcript() -> Option<serde_json::Value> {
+        None
+    }
+
     pub fn default_summary() -> Option<String> {
         None
     }
@@ -141,7 +158,6 @@ impl Default for Video {
             created_at: Self::default_created_at(),
             processing_state: Self::default_processing_state(),
             url: Self::default_url(),
-            images: Self::default_images(),
             title: Self::default_title(),
             duration: Self::default_duration(),
             author: Self::default_author(),
@@ -149,6 +165,8 @@ impl Default for Video {
             metadata: Self::default_metadata(),
             read: Self::default_read(),
             progress: Self::default_progress(),
+            images: Self::default_images(),
+            transcript: Self::default_transcript(),
             summary: Self::default_summary(),
             processed_path: Self::default_processed_path(),
             _permission: ObjectPermission::Owner,
@@ -161,14 +179,13 @@ impl Serialize for Video {
     where
         S: Serializer,
     {
-        let mut state = serializer.serialize_struct("Video", 17)?;
+        let mut state = serializer.serialize_struct("Video", 18)?;
         state.serialize_field("id", &self.id)?;
         state.serialize_field("organization_id", &self.organization_id)?;
         state.serialize_field("updated_at", &self.updated_at)?;
         state.serialize_field("created_at", &self.created_at)?;
         state.serialize_field("processing_state", &self.processing_state)?;
         state.serialize_field("url", &self.url)?;
-        state.serialize_field("images", &self.images)?;
         state.serialize_field("title", &self.title)?;
         state.serialize_field("duration", &self.duration)?;
         state.serialize_field("author", &self.author)?;
@@ -176,6 +193,8 @@ impl Serialize for Video {
         state.serialize_field("metadata", &self.metadata)?;
         state.serialize_field("read", &self.read)?;
         state.serialize_field("progress", &self.progress)?;
+        state.serialize_field("images", &self.images)?;
+        state.serialize_field("transcript", &self.transcript)?;
         state.serialize_field("summary", &self.summary)?;
         state.serialize_field("processed_path", &self.processed_path)?;
         state.serialize_field("_permission", &self._permission)?;
@@ -189,7 +208,6 @@ pub struct VideoCreatePayloadAndUpdatePayload {
     pub id: Option<VideoId>,
     pub processing_state: crate::models::video::VideoProcessingState,
     pub url: Option<String>,
-    pub images: Option<serde_json::Value>,
     pub title: Option<String>,
     pub duration: Option<i32>,
     pub author: Option<String>,
@@ -197,6 +215,8 @@ pub struct VideoCreatePayloadAndUpdatePayload {
     pub metadata: Option<serde_json::Value>,
     pub read: bool,
     pub progress: i32,
+    pub images: Option<crate::models::video::VideoImages>,
+    pub transcript: Option<serde_json::Value>,
     pub summary: Option<String>,
     pub processed_path: Option<String>,
 }
@@ -221,10 +241,6 @@ impl VideoCreatePayloadAndUpdatePayload {
         None
     }
 
-    pub fn default_images() -> Option<serde_json::Value> {
-        None
-    }
-
     pub fn default_title() -> Option<String> {
         None
     }
@@ -253,6 +269,14 @@ impl VideoCreatePayloadAndUpdatePayload {
         <i32 as Default>::default().into()
     }
 
+    pub fn default_images() -> Option<crate::models::video::VideoImages> {
+        None
+    }
+
+    pub fn default_transcript() -> Option<serde_json::Value> {
+        None
+    }
+
     pub fn default_summary() -> Option<String> {
         None
     }
@@ -268,7 +292,6 @@ impl Default for VideoCreatePayloadAndUpdatePayload {
             id: Self::default_id(),
             processing_state: Self::default_processing_state(),
             url: Self::default_url(),
-            images: Self::default_images(),
             title: Self::default_title(),
             duration: Self::default_duration(),
             author: Self::default_author(),
@@ -276,6 +299,8 @@ impl Default for VideoCreatePayloadAndUpdatePayload {
             metadata: Self::default_metadata(),
             read: Self::default_read(),
             progress: Self::default_progress(),
+            images: Self::default_images(),
+            transcript: Self::default_transcript(),
             summary: Self::default_summary(),
             processed_path: Self::default_processed_path(),
         }

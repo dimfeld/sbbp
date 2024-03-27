@@ -4,10 +4,12 @@ pub mod analyze;
 pub mod download;
 pub mod extract;
 pub mod summarize;
+pub mod transcribe;
 
-use std::path::Path;
+use std::{os::unix::process::ExitStatusExt, path::Path};
 
 use effectum::{Queue, Worker};
+use error_stack::{Report, ResultExt};
 use futures::FutureExt;
 
 use crate::server::ServerState;
@@ -36,22 +38,22 @@ enum JobError {
     ExtractingAudio,
     #[error("Failed to extract images")]
     ExtractingImages,
+    #[error("Failed creating thumbnails")]
+    Thumbnail,
 }
 
 pub struct QueueWorkers {
-    pub analyze: Worker,
+    pub compute: Worker,
     pub download: Worker,
-    pub ffmpeg: Worker,
-    pub summarize: Worker,
+    pub llm: Worker,
 }
 
 impl QueueWorkers {
     pub async fn shutdown(self) {
         tokio::join!(
-            self.analyze.unregister(None).map(|r| r.ok()),
+            self.compute.unregister(None).map(|r| r.ok()),
             self.download.unregister(None).map(|r| r.ok()),
-            self.ffmpeg.unregister(None).map(|r| r.ok()),
-            self.summarize.unregister(None).map(|r| r.ok()),
+            self.llm.unregister(None).map(|r| r.ok()),
         );
     }
 }
@@ -71,12 +73,13 @@ pub async fn init(
     let download_runner = download::register(&state.queue, init_recurring_jobs).await?;
     let extract_runner = extract::register(&state.queue, init_recurring_jobs).await?;
     let summarize_runner = summarize::register(&state.queue, init_recurring_jobs).await?;
+    let transcribe_runner = transcribe::register(&state.queue, init_recurring_jobs).await?;
 
     // create the workers
-    let worker_analyze = Worker::builder(&state.queue, state.clone())
-        .max_concurrency(4)
-        .min_concurrency(4)
-        .jobs([analyze_runner])
+    let worker_compute = Worker::builder(&state.queue, state.clone())
+        .max_concurrency(8)
+        .min_concurrency(8)
+        .jobs([analyze_runner, extract_runner])
         .build()
         .await?;
 
@@ -87,26 +90,48 @@ pub async fn init(
         .build()
         .await?;
 
-    let worker_ffmpeg = Worker::builder(&state.queue, state.clone())
-        .max_concurrency(4)
-        .min_concurrency(4)
-        .jobs([extract_runner])
-        .build()
-        .await?;
-
-    let worker_summarize = Worker::builder(&state.queue, state.clone())
-        .max_concurrency(2)
-        .min_concurrency(2)
-        .jobs([summarize_runner])
+    let worker_llm = Worker::builder(&state.queue, state.clone())
+        .max_concurrency(8)
+        .min_concurrency(8)
+        .jobs([summarize_runner, transcribe_runner])
         .build()
         .await?;
 
     let workers = QueueWorkers {
-        analyze: worker_analyze,
+        compute: worker_compute,
         download: worker_download,
-        ffmpeg: worker_ffmpeg,
-        summarize: worker_summarize,
+        llm: worker_llm,
     };
 
     Ok(workers)
+}
+
+/// Check the result of a command, and if it failed return the specified error with additional
+/// information attached.
+fn check_command_result(
+    output: std::process::Output,
+    err: JobError,
+) -> Result<std::process::Output, Report<JobError>> {
+    if output.status.success() {
+        Ok(output)
+    } else {
+        let exit_status = if let Some(signal) = output.status.signal() {
+            format!("Received signal {signal}")
+        } else if let Some(code) = output.status.code() {
+            format!("Exited with code {code}")
+        } else {
+            "Failed for unknown reason".to_string()
+        };
+
+        Err(Report::new(err))
+            .attach_printable(exit_status)
+            .attach_printable(format!(
+                "stdout: {}",
+                String::from_utf8(output.stdout).unwrap_or_default()
+            ))
+            .attach_printable(format!(
+                "stderr: {}",
+                String::from_utf8(output.stderr).unwrap_or_default()
+            ))
+    }
 }

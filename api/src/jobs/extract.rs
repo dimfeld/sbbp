@@ -4,86 +4,119 @@
 use std::path::Path;
 
 use effectum::{JobBuilder, JobRunner, Queue, RecurringJobSchedule, RunningJob};
-use error_stack::ResultExt;
+use error_stack::{Report, ResultExt};
+use futures::{StreamExt, TryStreamExt};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use temp_dir::TempDir;
+use tokio::fs::DirBuilder;
 
-use super::JobError;
-use crate::{models::video::VideoId, server::ServerState};
+use super::{check_command_result, JobError};
+use crate::{
+    models::video::{VideoId, VideoImages, VideoProcessingState, VIDEO_IMAGE_TEMPLATE},
+    server::ServerState,
+};
 
 /// The payload data for the extract background job
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ExtractJobPayload {
     pub id: VideoId,
-    pub storage_location: String,
+    pub storage_prefix: String,
+    pub video_filename: String,
 }
 
-/// Run the extract background job
+/// Extract images and audio from the video
 async fn run(job: RunningJob, state: ServerState) -> Result<(), error_stack::Report<JobError>> {
     let payload: ExtractJobPayload = job.json_payload().change_context(JobError::Payload)?;
 
+    sqlx::query!(
+        "UPDATE videos
+        SET processing_state=$2
+        WHERE id=$1",
+        payload.id.as_uuid(),
+        VideoProcessingState::Processing as _
+    )
+    .execute(&state.db)
+    .await
+    .change_context(JobError::Db)?;
+
     let temp_dir = TempDir::new().change_context(JobError::TempDir)?;
     let dir = temp_dir.path();
-    // Get just the last path component to use as the filename
-    let filename = payload
-        .storage_location
-        .rsplit_once('/')
-        .map(|p| p.1)
-        .unwrap_or(&payload.storage_location);
-    let video_path = dir.join(filename);
+    let output_location = dir.join(&payload.video_filename);
 
-    let output_location = dir.join(filename);
+    let video_storage_path = format!("{}/{}", payload.storage_prefix, payload.video_filename);
     state
         .storage
         .uploads
-        .stream_to_disk(&payload.storage_location, &video_path)
+        .stream_to_disk(&video_storage_path, &output_location)
         .await
         .change_context(JobError::StorageDownload)?;
 
-    let (audio_result, images_result) = futures::join!(
-        process_audio(dir, &video_path),
-        extract_images(dir, &video_path),
-    );
+    let output_location = output_location.to_string_lossy();
+    let ((audio_duration, audio_path), (image_duration, images)) = futures::try_join!(
+        extract_audio(&state, payload.id, dir, &output_location),
+        extract_images(&state, payload.id, dir, &output_location),
+    )?;
 
-    Ok(())
-}
+    sqlx::query!(
+        "UPDATE videos
+        SET images=$2,
+        metadata=metadata || $3
+        WHERE id=$1",
+        payload.id.as_uuid(),
+        sqlx::types::Json(&images) as _,
+        json!({
+            "audio_extraction": {
+                "duration": audio_duration.as_secs(),
+            },
+            "image_extraction": {
+                "duration": image_duration.as_secs(),
+            }
+        })
+    )
+    .execute(&state.db)
+    .await
+    .change_context(JobError::Db)?;
 
-async fn process_audio(dir: &Path, video_path: &Path) -> Result<(), error_stack::Report<JobError>> {
-    let audio_path = dir.join("audio.wav");
-    let result = tokio::process::Command::new("ffmpeg")
-        .args([
-            "-y",
-            "-i",
-            video_path.to_string_lossy().as_ref(),
-            "-vn",
-            "-acodec",
-            "pcm_s16le",
-            "-ar",
-            "16000",
-            "-ac",
-            "1",
-            audio_path.to_string_lossy().as_ref(),
-        ])
-        .stdout(std::process::Stdio::piped())
-        .stderr(std::process::Stdio::piped())
-        .spawn()
-        .change_context(JobError::StartingFfmpeg)?
-        .wait_with_output()
-        .await
-        .change_context(JobError::ExtractingAudio)?;
-    // Check success
+    super::transcribe::enqueue(
+        &state,
+        &super::transcribe::TranscribeJobPayload {
+            id: payload.id,
+            storage_prefix: payload.storage_prefix.clone(),
+            audio_path,
+        },
+    )
+    .await
+    .change_context(JobError::Queue)?;
 
-    // Send audio to deepgram
+    super::analyze::enqueue(
+        &state,
+        &super::analyze::AnalyzeJobPayload {
+            id: payload.id,
+            storage_prefix: payload.storage_prefix,
+            max_index: images.max_index,
+        },
+    )
+    .await
+    .change_context(JobError::Queue)?;
 
     Ok(())
 }
 
 async fn extract_images(
+    server: &ServerState,
+    id: VideoId,
     dir: &Path,
-    video_path: &Path,
-) -> Result<(), error_stack::Report<JobError>> {
-    let image_template = dir.join("image-%05d.webp");
+    video_path: &str,
+) -> Result<(std::time::Duration, VideoImages), Report<JobError>> {
+    let start = tokio::time::Instant::now();
+    let image_dir = dir.join("images");
+    DirBuilder::new()
+        .create(&image_dir)
+        .await
+        .change_context(JobError::TempDir)?;
+
+    let image_template = image_dir.join(VIDEO_IMAGE_TEMPLATE);
     let interval = 10;
     let fps = format!("fps=1/{interval}");
 
@@ -91,7 +124,7 @@ async fn extract_images(
         .args([
             "-y",
             "-i",
-            video_path.to_string_lossy().as_ref(),
+            video_path,
             "-c:v",
             "libwebp",
             image_template.to_string_lossy().as_ref(),
@@ -103,13 +136,82 @@ async fn extract_images(
         .wait_with_output()
         .await
         .change_context(JobError::ExtractingImages)?;
-    // check success
+    check_command_result(result, JobError::ExtractingImages)?;
 
-    // Find the resulting images
-    // Upload them to storage
-    // Do SSIM to determine similarity
+    let file_list = tokio::fs::read_dir(image_dir)
+        .await
+        .change_context(JobError::ExtractingImages)?;
+    let file_list = tokio_stream::wrappers::ReadDirStream::new(file_list)
+        .try_collect::<Vec<_>>()
+        .await
+        .change_context(JobError::ExtractingImages)?;
 
-    Ok(())
+    let num_files = file_list.len();
+
+    futures::stream::iter(file_list)
+        .map(Ok)
+        .try_for_each_concurrent(16, |path| async move {
+            let storage_path = format!("{}/{}", id, path.file_name().to_string_lossy());
+            server
+                .storage
+                .images
+                .upload_file(&path.path(), &storage_path)
+                .await
+                .change_context(JobError::StorageUpload)
+                .attach_printable_lazy(|| storage_path.clone())
+        })
+        .await?;
+
+    Ok((
+        start.elapsed(),
+        VideoImages {
+            max_index: num_files - 1,
+            interval,
+            removed: Vec::new(),
+        },
+    ))
+}
+
+async fn extract_audio(
+    server: &ServerState,
+    id: VideoId,
+    dir: &Path,
+    video_path: &str,
+) -> Result<(std::time::Duration, String), Report<JobError>> {
+    let start = tokio::time::Instant::now();
+    let audio_path = dir.join("audio.mp4");
+    let result = tokio::process::Command::new("ffmpeg")
+        .args([
+            "-y",
+            "-i",
+            video_path,
+            "-vn",
+            "-c:a",
+            "aac",
+            "-b:a",
+            "128k",
+            audio_path.to_string_lossy().as_ref(),
+        ])
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
+        .spawn()
+        .change_context(JobError::StartingFfmpeg)?
+        .wait_with_output()
+        .await
+        .change_context(JobError::ExtractingAudio)?;
+
+    check_command_result(result, JobError::ExtractingAudio)?;
+
+    let storage_path = format!("{}/audio.mp4", id);
+    server
+        .storage
+        .uploads
+        .upload_file(&audio_path, &storage_path)
+        .await
+        .change_context(JobError::StorageUpload)
+        .attach_printable_lazy(|| storage_path.clone())?;
+
+    Ok((start.elapsed(), storage_path))
 }
 
 /// Enqueue the extract job to run immediately

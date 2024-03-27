@@ -5,7 +5,6 @@ SELECT
   created_at,
   processing_state,
   url,
-  images,
   title,
   duration,
   author,
@@ -13,6 +12,8 @@ SELECT
   metadata,
   read,
   progress,
+  images,
+  transcript,
   summary,
   processed_path,
   perm._permission

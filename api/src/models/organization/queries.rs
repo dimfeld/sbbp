@@ -274,7 +274,7 @@ pub async fn update(
         id.as_uuid(),
         auth.organization_id.as_uuid(),
         &actor_ids,
-        &payload.name as _,
+        &payload.name,
         payload.owner.as_ref() as _,
         payload.default_role.as_ref() as _,
     )

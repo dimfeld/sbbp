@@ -5,7 +5,6 @@ SELECT
   created_at,
   processing_state AS "processing_state: crate::models::video::VideoProcessingState",
   url,
-  images,
   title,
   duration,
   author,
@@ -13,6 +12,8 @@ SELECT
   metadata,
   read,
   progress,
+  images AS "images: crate::models::video::VideoImages",
+  transcript,
   summary,
   processed_path,
   _permission AS "_permission!: filigree::auth::ObjectPermission"

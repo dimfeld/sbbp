@@ -23,6 +23,8 @@ filigree = { path = "../../filigree/filigree" }
 futures = "0.3.30"
 http = "1.0.0"
 hyper = { version = "1.1.0", features = ["server", "http1", "http2"] }
+image = "0.25.0"
+image-compare = "0.4.0"
 percent-encoding = "2.3.1"
 reqwest = { version = "0.11.23", features = ["cookies", "json"] }
 rust-embed = "8.1.0"
@@ -31,12 +33,13 @@ serde = { version = "1.0.193", features = ["derive"] }
 serde_json = "1.0.113"
 serde_with = { version = "3.6.1", features = ["json", "schemars_0_8"] }
 sqlx = { version = "0.7.3", features = ["chrono", "postgres"] }
-sqlx-transparent-json-decode = "2.2.0"
+sqlx-transparent-json-decode = "2.2.1"
 temp-dir = "0.1.13"
 tera = "1.19.1"
 thiserror = "1.0.56"
 time = "0.3.34"
 tokio = { version = "1.36.0", features = ["full"] }
+tokio-stream = { version = "0.1.15", features = ["fs"] }
 tower = "0.4.13"
 tower-cookies = "0.10.0"
 tower-http = { version = "0.5.1", features = ["full"] }

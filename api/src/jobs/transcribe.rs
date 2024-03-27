@@ -1,4 +1,4 @@
-//! summarize background job
+//! transcribe background job
 #![allow(unused_imports, unused_variables, dead_code)]
 
 use effectum::{JobBuilder, JobRunner, Queue, RecurringJobSchedule, RunningJob};
@@ -7,25 +7,27 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 
 use super::JobError;
-use crate::server::ServerState;
+use crate::{models::video::VideoId, server::ServerState};
 
-/// The payload data for the summarize background job
+/// The payload data for the transcribe background job
 #[derive(Debug, Serialize, Deserialize)]
-pub struct SummarizeJobPayload {
-    // Fill in your payload data here
+pub struct TranscribeJobPayload {
+    pub id: VideoId,
+    pub storage_prefix: String,
+    pub audio_path: String,
 }
 
-/// Send the transcript to an LLM for summarization
+/// Send the audio to a service for speech recognition
 async fn run(job: RunningJob, state: ServerState) -> Result<(), error_stack::Report<JobError>> {
-    let payload: SummarizeJobPayload = job.json_payload().change_context(JobError::Payload)?;
+    let payload: TranscribeJobPayload = job.json_payload().change_context(JobError::Payload)?;
 
     Ok(())
 }
 
-/// Enqueue the summarize job to run immediately
+/// Enqueue the transcribe job to run immediately
 pub async fn enqueue(
     state: &ServerState,
-    payload: &SummarizeJobPayload,
+    payload: &TranscribeJobPayload,
 ) -> Result<uuid::Uuid, effectum::Error> {
     create_job_builder()
         .json_payload(payload)?
@@ -33,10 +35,10 @@ pub async fn enqueue(
         .await
 }
 
-/// Enqueue the summarize job to run at a specific time
+/// Enqueue the transcribe job to run at a specific time
 pub async fn enqueue_at(
     state: &ServerState,
-    payload: &SummarizeJobPayload,
+    payload: &TranscribeJobPayload,
     at: chrono::DateTime<chrono::Utc>,
 ) -> Result<uuid::Uuid, effectum::Error> {
     // convert to time crate
@@ -56,7 +58,7 @@ pub async fn register(
     queue: &Queue,
     init_recurring_jobs: bool,
 ) -> Result<JobRunner<ServerState>, effectum::Error> {
-    let runner = JobRunner::builder("summarize", run)
+    let runner = JobRunner::builder("transcribe", run)
         .autoheartbeat(false)
         .format_failures_with_debug(true)
         .build();
@@ -65,5 +67,5 @@ pub async fn register(
 }
 
 fn create_job_builder() -> JobBuilder {
-    JobBuilder::new("summarize").priority(1).weight(1)
+    JobBuilder::new("transcribe").priority(1).weight(1)
 }

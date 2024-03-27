@@ -13,12 +13,15 @@ use thiserror::Error;
 /// The top-level error type from the platform
 #[derive(Debug, Error)]
 pub enum Error {
-    /// Failed to intialize database
-    #[error("Failed to intialize database")]
+    /// Failed to initialize database
+    #[error("Failed to initialize database")]
     DbInit,
     /// Database error not otherwise handled
     #[error("Database error")]
     Db,
+    /// Configuration error
+    #[error("Configuration error")]
+    Config,
     /// Task queue error not otherwise handled
     #[error("Task Queue error")]
     TaskQueue,
@@ -141,6 +144,8 @@ impl HttpError for Error {
             Error::MissingPermission(_) => FilErrorKind::Unauthenticated.as_str(),
             Error::InvalidHostHeader => FilErrorKind::InvalidHostHeader.as_str(),
             Error::Storage => FilErrorKind::StorageWrite.as_str(),
+            // These aren't ever returned, we just need some value to fill out the match
+            Error::Config => "config",
             Error::TypeExport => "cli",
         }
     }
@@ -182,6 +187,7 @@ impl HttpError for Error {
             Error::Login => StatusCode::UNAUTHORIZED,
             Error::InvalidHostHeader => StatusCode::BAD_REQUEST,
             Error::Storage => StatusCode::INTERNAL_SERVER_ERROR,
+            Error::Config => StatusCode::INTERNAL_SERVER_ERROR,
             Error::TypeExport => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }

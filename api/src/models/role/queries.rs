@@ -274,7 +274,7 @@ pub async fn update(
         id.as_uuid(),
         auth.organization_id.as_uuid(),
         &actor_ids,
-        &payload.name as _,
+        &payload.name,
         payload.description.as_ref(),
     )
     .fetch_optional(&mut *db)

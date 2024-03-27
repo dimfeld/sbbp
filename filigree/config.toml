@@ -11,6 +11,10 @@ shared_types = [
   "crate::models::video::VideoProcessingState",
 ]
 
+[secrets]
+deepgram = "DEEPGRAM_API_KEY"
+anthropic = "ANTHROPIC_API_KEY"
+
 [server]
 dotenv = true
 hosts = ["localhost"]
@@ -40,27 +44,31 @@ type = "local"
 base_path = "storage"
 
 
+# Job config
+# Use a separate task for each stage so that we can pipeline downloads and processing.
+# Also makes it easier to rerun specific stages later on.
+
 [job.download]
 worker = "download"
 
 [job.extract]
-worker = "ffmpeg"
+worker = "compute"
 
 [job.analyze]
-worker = "analyze"
+worker = "compute"
+
+[job.transcribe]
+worker = "llm"
 
 [job.summarize]
-worker = "summarize"
+worker = "llm"
 
 [worker.download]
 max_concurrency = 2
 
-[worker.ffmpeg]
-max_concurrency = 4
+[worker.compute]
+max_concurrency = 8
 
-[worker.analyze]
-max_concurrency = 4
-
-[worker.summarize]
-max_concurrency = 2
+[worker.llm]
+max_concurrency = 8
 

@@ -3,7 +3,6 @@ INSERT INTO videos (
   organization_id,
   processing_state,
   url,
-  images,
   title,
   duration,
   author,
@@ -11,6 +10,8 @@ INSERT INTO videos (
   metadata,
   read,
   progress,
+  images,
+  transcript,
   summary,
   processed_path)
 VALUES (
@@ -27,7 +28,8 @@ VALUES (
   $11,
   $12,
   $13,
-  $14)
+  $14,
+  $15)
 RETURNING
   id AS "id: VideoId",
   organization_id AS "organization_id: crate::models::organization::OrganizationId",
@@ -35,7 +37,6 @@ RETURNING
   created_at,
   processing_state AS "processing_state: crate::models::video::VideoProcessingState",
   url,
-  images,
   title,
   duration,
   author,
@@ -43,6 +44,8 @@ RETURNING
   metadata,
   read,
   progress,
+  images AS "images: crate::models::video::VideoImages",
+  transcript,
   summary,
   processed_path,
   'owner' AS "_permission!: filigree::auth::ObjectPermission"

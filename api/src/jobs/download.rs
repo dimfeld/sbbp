@@ -1,22 +1,28 @@
 //! download background job
 #![allow(unused_imports, unused_variables, dead_code)]
 
+use std::path::{Path, PathBuf};
+
 use bytes::Bytes;
 use effectum::{JobBuilder, JobRunner, Queue, RecurringJobSchedule, RunningJob};
-use error_stack::ResultExt;
+use error_stack::{Report, ResultExt};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use temp_dir::TempDir;
 use tokio::io::AsyncWriteExt;
 
-use super::JobError;
-use crate::{models::video::VideoId, server::ServerState};
+use super::{check_command_result, JobError};
+use crate::{
+    models::video::{VideoId, VideoProcessingState},
+    server::ServerState,
+};
 
 /// The payload data for the download background job
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DownloadJobPayload {
     id: VideoId,
     download_url: String,
+    storage_prefix: String,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -34,6 +40,19 @@ struct InfoJson {
 /// Run the download background job
 async fn run(job: RunningJob, state: ServerState) -> Result<(), error_stack::Report<JobError>> {
     let payload: DownloadJobPayload = job.json_payload().change_context(JobError::Payload)?;
+    let start = tokio::time::Instant::now();
+
+    sqlx::query!(
+        "UPDATE videos SET
+        processing_state=$2
+        WHERE id=$1
+        ",
+        payload.id.as_uuid(),
+        VideoProcessingState::Downloading as _,
+    )
+    .execute(&state.db)
+    .await
+    .change_context(JobError::Db)?;
 
     let temp_dir = TempDir::new().change_context(JobError::TempDir)?;
     let download_dir = temp_dir.path();
@@ -72,57 +91,50 @@ async fn run(job: RunningJob, state: ServerState) -> Result<(), error_stack::Rep
         .change_context(JobError::ReadingInfoJson)?;
     let info_json: InfoJson =
         serde_json::from_slice(&info_json_buffer).change_context(JobError::ReadingInfoJson)?;
+    let video_fs_path = format!("{}/video.{}", download_dir.display(), info_json.ext);
 
     let info_json_bytes = Bytes::from(info_json_buffer);
-    let infojson_storage_path = format!("{}/video.info.json", download_dir.display());
+    let info_json_storage_path = format!("{}/video.info.json", payload.storage_prefix);
     state
         .storage
         .uploads
-        .put(&infojson_storage_path, info_json_bytes)
+        .put(&info_json_storage_path, info_json_bytes)
         .await
         .change_context(JobError::StorageUpload)
-        .attach_printable(infojson_storage_path)?;
+        .attach_printable(info_json_storage_path)?;
 
-    let video_fs_path = format!("{}/video.{}", download_dir.display(), info_json.ext);
-    let video_storage_path = format!("{}/video.{}", dirname, info_json.ext);
-    let video_reader = tokio::fs::File::open(&video_fs_path)
-        .await
-        .change_context(JobError::StorageUpload)
-        .attach_printable(video_fs_path)?;
-    let mut video_reader = tokio::io::BufReader::with_capacity(8 * 1024 * 1024, video_reader);
+    let video_filename = format!("video.{}", info_json.ext);
+    let video_storage_path = format!("{}/{}", payload.storage_prefix, video_filename);
 
-    let (id, mut writer) = state
+    state
         .storage
         .uploads
-        .put_multipart(&video_storage_path)
+        .upload_file(&video_fs_path, &video_storage_path)
         .await
         .change_context(JobError::StorageUpload)
         .attach_printable_lazy(|| video_storage_path.clone())?;
 
-    tokio::io::copy_buf(&mut video_reader, &mut writer)
-        .await
-        .change_context(JobError::StorageUpload)
-        .attach_printable_lazy(|| video_storage_path.clone())?;
-    writer
-        .flush()
-        .await
-        .change_context(JobError::StorageUpload)
-        .attach_printable_lazy(|| video_storage_path.clone())?;
+    let elapsed = start.elapsed();
 
     sqlx::query!(
         "UPDATE videos SET
-        title=$2,
-        duration=$3,
-        processed_path=$4,
-        metadata=$5,
-        processing_state='downloaded'
+        processing_state=$2,
+        title=$3,
+        duration=$4,
+        processed_path=$5,
+        metadata=metadata || $6
         WHERE id=$1
         ",
         payload.id.as_uuid(),
+        VideoProcessingState::Downloaded as _,
         &info_json.title,
         info_json.duration as i32,
         video_storage_path,
-        sqlx::types::Json(&info_json) as _
+        json!({
+            "download": {
+                "duration": elapsed.as_secs()
+            }
+        }),
     )
     .execute(&state.db)
     .await
@@ -132,7 +144,8 @@ async fn run(job: RunningJob, state: ServerState) -> Result<(), error_stack::Rep
         &state,
         &super::extract::ExtractJobPayload {
             id: payload.id,
-            storage_location: video_storage_path,
+            storage_prefix: payload.storage_prefix,
+            video_filename,
         },
     )
     .await
