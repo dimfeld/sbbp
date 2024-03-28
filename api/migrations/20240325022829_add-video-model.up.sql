@@ -14,7 +14,8 @@ CREATE TABLE videos (
   read boolean NOT NULL DEFAULT FALSE,
   progress integer NOT NULL DEFAULT 0,
   summary text,
-  processed_path text
+  processed_path text,
+  transcript jsonb
 );
 
 CREATE INDEX videos_organization_id ON videos (organization_id);
