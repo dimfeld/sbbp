@@ -52,12 +52,14 @@ default_sql = "0"
 [[fields]]
 name = "images"
 type = "json"
+omit_in_list = true
 rust_type = "crate::models::video::VideoImages"
 nullable = true
 
 [[fields]]
 name = "transcript"
 type = "json"
+omit_in_list = true
 nullable = true
 
 [[fields]]
