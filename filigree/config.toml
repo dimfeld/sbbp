@@ -58,10 +58,10 @@ worker = "compute"
 worker = "compute"
 
 [job.transcribe]
-worker = "llm"
+worker = "transcribe"
 
 [job.summarize]
-worker = "llm"
+worker = "summarize"
 
 [worker.download]
 max_concurrency = 2
@@ -69,6 +69,9 @@ max_concurrency = 2
 [worker.compute]
 max_concurrency = 8
 
-[worker.llm]
-max_concurrency = 8
+[worker.transcribe]
+max_concurrency = 16
+
+[worker.summarize]
+max_concurrency = 16
 

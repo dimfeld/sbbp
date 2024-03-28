@@ -7,17 +7,21 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 
 use super::JobError;
-use crate::server::ServerState;
+use crate::{models::video::VideoId, server::ServerState};
 
 /// The payload data for the summarize background job
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SummarizeJobPayload {
-    // Fill in your payload data here
+    pub id: VideoId,
 }
 
 /// Send the transcript to an LLM for summarization
 async fn run(job: RunningJob, state: ServerState) -> Result<(), error_stack::Report<JobError>> {
     let payload: SummarizeJobPayload = job.json_payload().change_context(JobError::Payload)?;
+
+    // Get the transcript from the database
+    // Send it to the LLM for summary
+    // Store the summary in the database and set processing_state to Ready
 
     Ok(())
 }

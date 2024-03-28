@@ -49,12 +49,15 @@ enum JobError {
     ReadImage,
     #[error("Failed calculating similarity")]
     CalculatingSimilarity,
+    #[error("Failed to transcribe audio")]
+    Transcribe,
 }
 
 pub struct QueueWorkers {
     pub compute: Worker,
     pub download: Worker,
-    pub llm: Worker,
+    pub summarize: Worker,
+    pub transcribe: Worker,
 }
 
 impl QueueWorkers {
@@ -62,7 +65,8 @@ impl QueueWorkers {
         tokio::join!(
             self.compute.unregister(None).map(|r| r.ok()),
             self.download.unregister(None).map(|r| r.ok()),
-            self.llm.unregister(None).map(|r| r.ok()),
+            self.summarize.unregister(None).map(|r| r.ok()),
+            self.transcribe.unregister(None).map(|r| r.ok()),
         );
     }
 }
@@ -97,17 +101,25 @@ pub async fn init(
         .build()
         .await?;
 
-    let worker_llm = Worker::builder(&state.queue, state.clone())
-        .max_concurrency(8)
-        .min_concurrency(8)
-        .jobs([summarize_runner, transcribe_runner])
+    let worker_summarize = Worker::builder(&state.queue, state.clone())
+        .max_concurrency(16)
+        .min_concurrency(16)
+        .jobs([summarize_runner])
+        .build()
+        .await?;
+
+    let worker_transcribe = Worker::builder(&state.queue, state.clone())
+        .max_concurrency(16)
+        .min_concurrency(16)
+        .jobs([transcribe_runner])
         .build()
         .await?;
 
     let workers = QueueWorkers {
         compute: worker_compute,
         download: worker_download,
-        llm: worker_llm,
+        summarize: worker_summarize,
+        transcribe: worker_transcribe,
     };
 
     Ok(workers)
