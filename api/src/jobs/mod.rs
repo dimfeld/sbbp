@@ -1,4 +1,9 @@
 //! Background jobs
+//!
+//! The job flow is:
+//! download leads to extract
+//! extract leads to analyze and transcribe
+//! transcribe leads to summarize
 
 pub mod analyze;
 pub mod download;
@@ -70,8 +75,6 @@ pub async fn init(
     state: &ServerState,
     init_recurring_jobs: bool,
 ) -> Result<QueueWorkers, effectum::Error> {
-    // create the queue
-
     // register the jobs
     let analyze_runner = analyze::register(&state.queue, init_recurring_jobs).await?;
     let download_runner = download::register(&state.queue, init_recurring_jobs).await?;

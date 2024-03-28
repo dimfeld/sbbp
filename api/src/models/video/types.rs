@@ -204,19 +204,9 @@ impl Serialize for Video {
 #[cfg_attr(test, derive(Serialize))]
 pub struct VideoCreatePayloadAndUpdatePayload {
     pub id: Option<VideoId>,
-    pub processing_state: crate::models::video::VideoProcessingState,
-    pub url: Option<String>,
     pub title: Option<String>,
-    pub duration: Option<i32>,
-    pub author: Option<String>,
-    pub date: Option<chrono::NaiveDate>,
-    pub metadata: Option<serde_json::Value>,
     pub read: bool,
     pub progress: i32,
-    pub images: Option<crate::models::video::VideoImages>,
-    pub transcript: Option<serde_json::Value>,
-    pub summary: Option<String>,
-    pub processed_path: Option<String>,
 }
 
 pub type VideoCreatePayload = VideoCreatePayloadAndUpdatePayload;
@@ -231,31 +221,7 @@ impl VideoCreatePayloadAndUpdatePayload {
         None
     }
 
-    pub fn default_processing_state() -> crate::models::video::VideoProcessingState {
-        <crate::models::video::VideoProcessingState as Default>::default().into()
-    }
-
-    pub fn default_url() -> Option<String> {
-        None
-    }
-
     pub fn default_title() -> Option<String> {
-        None
-    }
-
-    pub fn default_duration() -> Option<i32> {
-        None
-    }
-
-    pub fn default_author() -> Option<String> {
-        None
-    }
-
-    pub fn default_date() -> Option<chrono::NaiveDate> {
-        None
-    }
-
-    pub fn default_metadata() -> Option<serde_json::Value> {
         None
     }
 
@@ -266,41 +232,15 @@ impl VideoCreatePayloadAndUpdatePayload {
     pub fn default_progress() -> i32 {
         <i32 as Default>::default().into()
     }
-
-    pub fn default_images() -> Option<crate::models::video::VideoImages> {
-        None
-    }
-
-    pub fn default_transcript() -> Option<serde_json::Value> {
-        None
-    }
-
-    pub fn default_summary() -> Option<String> {
-        None
-    }
-
-    pub fn default_processed_path() -> Option<String> {
-        None
-    }
 }
 
 impl Default for VideoCreatePayloadAndUpdatePayload {
     fn default() -> Self {
         Self {
             id: Self::default_id(),
-            processing_state: Self::default_processing_state(),
-            url: Self::default_url(),
             title: Self::default_title(),
-            duration: Self::default_duration(),
-            author: Self::default_author(),
-            date: Self::default_date(),
-            metadata: Self::default_metadata(),
             read: Self::default_read(),
             progress: Self::default_progress(),
-            images: Self::default_images(),
-            transcript: Self::default_transcript(),
-            summary: Self::default_summary(),
-            processed_path: Self::default_processed_path(),
         }
     }
 }

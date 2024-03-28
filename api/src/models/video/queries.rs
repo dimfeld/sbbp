@@ -248,19 +248,9 @@ pub async fn create_raw(
         "src/models/video/insert.sql",
         id.as_uuid(),
         organization_id.as_uuid(),
-        &payload.processing_state as _,
-        payload.url.as_ref(),
         payload.title.as_ref(),
-        payload.duration.as_ref(),
-        payload.author.as_ref(),
-        payload.date.as_ref(),
-        payload.metadata.as_ref(),
         &payload.read,
         &payload.progress,
-        sqlx::types::Json(payload.images.as_ref()) as _,
-        payload.transcript.as_ref(),
-        payload.summary.as_ref(),
-        payload.processed_path.as_ref(),
     )
     .fetch_one(&mut *db)
     .await
@@ -282,19 +272,9 @@ pub async fn update(
         id.as_uuid(),
         auth.organization_id.as_uuid(),
         &actor_ids,
-        &payload.processing_state as _,
-        payload.url.as_ref() as _,
         payload.title.as_ref() as _,
-        payload.duration.as_ref() as _,
-        payload.author.as_ref() as _,
-        payload.date.as_ref() as _,
-        payload.metadata.as_ref() as _,
         &payload.read as _,
         &payload.progress as _,
-        sqlx::types::Json(payload.images.as_ref()) as _,
-        payload.transcript.as_ref() as _,
-        payload.summary.as_ref() as _,
-        payload.processed_path.as_ref() as _,
     )
     .fetch_optional(&mut *db)
     .await

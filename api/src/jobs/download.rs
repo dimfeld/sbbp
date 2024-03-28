@@ -20,9 +20,9 @@ use crate::{
 /// The payload data for the download background job
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DownloadJobPayload {
-    id: VideoId,
-    download_url: String,
-    storage_prefix: String,
+    pub id: VideoId,
+    pub download_url: String,
+    pub storage_prefix: String,
 }
 
 #[derive(Serialize, Deserialize)]

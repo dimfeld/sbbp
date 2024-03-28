@@ -11,19 +11,21 @@ WITH permissions AS (
 UPDATE
   videos
 SET
-  processing_state = $4,
-  url = $5,
-  title = $6,
-  duration = $7,
-  author = $8,
-  date = $9,
-  metadata = $10,
-  read = $11,
-  progress = $12,
-  images = $13,
-  transcript = $14,
-  summary = $15,
-  processed_path = $16,
+  title = CASE WHEN permissions.is_owner THEN
+    $4
+  ELSE
+    videos.title
+  END,
+  read = CASE WHEN permissions.is_owner THEN
+    $5
+  ELSE
+    videos.read
+  END,
+  progress = CASE WHEN permissions.is_owner THEN
+    $6
+  ELSE
+    videos.progress
+  END,
   updated_at = now()
 FROM
   permissions
