@@ -16,7 +16,7 @@ bytes = "1.5.0"
 chrono = "0.4.33"
 clap = { version = "4.4.11", features = ["env", "derive"] }
 dotenvy = "0.15.7"
-effectum = "0.5.1"
+effectum = "0.6.0"
 error-stack = { version = "0.4.1", features = ["spantrace"] }
 eyre = "0.6.11"
 filigree = { path = "../../filigree/filigree" }

@@ -12,8 +12,6 @@ SELECT
   metadata,
   read,
   progress,
-  images,
-  transcript,
   summary,
   processed_path,
   perm._permission

@@ -1123,9 +1123,9 @@ checksum = "0d6ef0072f8a535281e4876be788938b528e9a1d43900b82c2569af7da799125"
 
 [[package]]
 name = "effectum"
-version = "0.5.1"
+version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b06e5f90be1030e550e923020a794ab7ff15abb330b006d28b140b377bc19d9a"
+checksum = "f437325217e4f83f71476ed71971a15191acde869c815a5b9192df1bcdee88d1"
 dependencies = [
  "ahash",
  "backoff",

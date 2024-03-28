@@ -15,7 +15,7 @@ pub const CREATE_PERMISSION: &str = "Video::owner";
 filigree::make_object_id!(VideoId, vid);
 
 /// The filename for images associated with a video. This should be kept in sync with [VIDEO_IMAGE_TEMPLATE].
-pub fn image_filename(index: usize, width: Option<size>) -> String {
+pub fn image_filename(index: usize, width: Option<usize>) -> String {
     if let Some(width) = width {
         format!("image-{:05}-{width}w.webp", index)
     } else {

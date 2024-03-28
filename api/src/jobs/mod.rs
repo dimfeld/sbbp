@@ -40,6 +40,10 @@ enum JobError {
     ExtractingImages,
     #[error("Failed creating thumbnails")]
     Thumbnail,
+    #[error("Failed reading image")]
+    ReadImage,
+    #[error("Failed calculating similarity")]
+    CalculatingSimilarity,
 }
 
 pub struct QueueWorkers {
