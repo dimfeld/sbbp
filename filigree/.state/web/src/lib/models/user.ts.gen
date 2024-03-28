@@ -14,10 +14,12 @@ export const UserSchema = z.object({
 });
 
 export type User = z.infer<typeof UserSchema>;
-export const UserPopulatedGetSchema = UserSchema;
-export type UserPopulatedGet = User;
-export const UserPopulatedListSchema = UserSchema;
-export type UserPopulatedList = User;
+export const UserListResultSchema = UserSchema;
+export type UserListResult = User;
+export const UserPopulatedGetResultSchema = UserSchema;
+export type UserPopulatedGetResult = User;
+export const UserPopulatedListResultSchema = UserSchema;
+export type UserPopulatedListResult = User;
 export const UserCreateResultSchema = UserSchema;
 export type UserCreateResult = User;
 

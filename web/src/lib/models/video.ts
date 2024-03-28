@@ -9,7 +9,50 @@ export const VideoSchema = z.object({
 	created_at: z.string().datetime(),
 	processing_state: z.string(),
 	url: z.string().optional(),
+	title: z.string().optional(),
+	duration: z.number().int().optional(),
+	author: z.string().optional(),
+	date: z.string().optional(),
+	metadata: z.any().optional(),
+	read: z.boolean(),
+	progress: z.number().int(),
 	images: z.any().optional(),
+	transcript: z.any().optional(),
+	summary: z.string().optional(),
+	processed_path: z.string().optional(),
+	_permission: ObjectPermission,
+});
+
+export type Video = z.infer<typeof VideoSchema>;
+export const VideoPopulatedGetResultSchema = VideoSchema;
+export type VideoPopulatedGetResult = Video;
+export const VideoCreateResultSchema = VideoSchema;
+export type VideoCreateResult = Video;
+
+export const VideoCreatePayloadAndUpdatePayloadSchema = z.object({
+	id: z.string().optional(),
+	title: z.string().optional(),
+	read: z.boolean(),
+	progress: z.number().int(),
+});
+
+export type VideoCreatePayloadAndUpdatePayload = z.infer<
+	typeof VideoCreatePayloadAndUpdatePayloadSchema
+>;
+export const VideoCreatePayloadSchema =
+	VideoCreatePayloadAndUpdatePayloadSchema;
+export type VideoCreatePayload = VideoCreatePayloadAndUpdatePayload;
+export const VideoUpdatePayloadSchema =
+	VideoCreatePayloadAndUpdatePayloadSchema;
+export type VideoUpdatePayload = VideoCreatePayloadAndUpdatePayload;
+
+export const VideoListResultAndPopulatedListResultSchema = z.object({
+	id: z.string(),
+	organization_id: z.string(),
+	updated_at: z.string().datetime(),
+	created_at: z.string().datetime(),
+	processing_state: z.string(),
+	url: z.string().optional(),
 	title: z.string().optional(),
 	duration: z.number().int().optional(),
 	author: z.string().optional(),
@@ -22,39 +65,15 @@ export const VideoSchema = z.object({
 	_permission: ObjectPermission,
 });
 
-export type Video = z.infer<typeof VideoSchema>;
-export const VideoPopulatedGetSchema = VideoSchema;
-export type VideoPopulatedGet = Video;
-export const VideoPopulatedListSchema = VideoSchema;
-export type VideoPopulatedList = Video;
-export const VideoCreateResultSchema = VideoSchema;
-export type VideoCreateResult = Video;
-
-export const VideoCreatePayloadAndUpdatePayloadSchema = z.object({
-	id: z.string().optional(),
-	processing_state: z.string(),
-	url: z.string().optional(),
-	images: z.any().optional(),
-	title: z.string().optional(),
-	duration: z.number().int().optional(),
-	author: z.string().optional(),
-	date: z.string().optional(),
-	metadata: z.any().optional(),
-	read: z.boolean(),
-	progress: z.number().int(),
-	summary: z.string().optional(),
-	processed_path: z.string().optional(),
-});
-
-export type VideoCreatePayloadAndUpdatePayload = z.infer<
-	typeof VideoCreatePayloadAndUpdatePayloadSchema
+export type VideoListResultAndPopulatedListResult = z.infer<
+	typeof VideoListResultAndPopulatedListResultSchema
 >;
-export const VideoCreatePayloadSchema =
-	VideoCreatePayloadAndUpdatePayloadSchema;
-export type VideoCreatePayload = VideoCreatePayloadAndUpdatePayload;
-export const VideoUpdatePayloadSchema =
-	VideoCreatePayloadAndUpdatePayloadSchema;
-export type VideoUpdatePayload = VideoCreatePayloadAndUpdatePayload;
+export const VideoListResultSchema =
+	VideoListResultAndPopulatedListResultSchema;
+export type VideoListResult = VideoListResultAndPopulatedListResult;
+export const VideoPopulatedListResultSchema =
+	VideoListResultAndPopulatedListResultSchema;
+export type VideoPopulatedListResult = VideoListResultAndPopulatedListResult;
 
 export const baseUrl = "videos";
 export const urlWithId = (id: string) => `${baseUrl}/${id}`;
@@ -125,14 +144,6 @@ export const VideoModel: ModelDefinition<typeof VideoSchema> = {
 			},
 		},
 		{
-			name: "images",
-			type: "object",
-			label: "Images",
-			constraints: {
-				required: false,
-			},
-		},
-		{
 			name: "title",
 			type: "text",
 			label: "Title",
@@ -187,6 +198,22 @@ export const VideoModel: ModelDefinition<typeof VideoSchema> = {
 			label: "Progress",
 			constraints: {
 				required: true,
+			},
+		},
+		{
+			name: "images",
+			type: "object",
+			label: "Images",
+			constraints: {
+				required: false,
+			},
+		},
+		{
+			name: "transcript",
+			type: "object",
+			label: "Transcript",
+			constraints: {
+				required: false,
 			},
 		},
 		{

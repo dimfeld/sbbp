@@ -13,10 +13,12 @@ export const OrganizationSchema = z.object({
 });
 
 export type Organization = z.infer<typeof OrganizationSchema>;
-export const OrganizationPopulatedGetSchema = OrganizationSchema;
-export type OrganizationPopulatedGet = Organization;
-export const OrganizationPopulatedListSchema = OrganizationSchema;
-export type OrganizationPopulatedList = Organization;
+export const OrganizationListResultSchema = OrganizationSchema;
+export type OrganizationListResult = Organization;
+export const OrganizationPopulatedGetResultSchema = OrganizationSchema;
+export type OrganizationPopulatedGetResult = Organization;
+export const OrganizationPopulatedListResultSchema = OrganizationSchema;
+export type OrganizationPopulatedListResult = Organization;
 export const OrganizationCreateResultSchema = OrganizationSchema;
 export type OrganizationCreateResult = Organization;
 

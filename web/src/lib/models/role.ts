@@ -13,10 +13,12 @@ export const RoleSchema = z.object({
 });
 
 export type Role = z.infer<typeof RoleSchema>;
-export const RolePopulatedGetSchema = RoleSchema;
-export type RolePopulatedGet = Role;
-export const RolePopulatedListSchema = RoleSchema;
-export type RolePopulatedList = Role;
+export const RoleListResultSchema = RoleSchema;
+export type RoleListResult = Role;
+export const RolePopulatedGetResultSchema = RoleSchema;
+export type RolePopulatedGetResult = Role;
+export const RolePopulatedListResultSchema = RoleSchema;
+export type RolePopulatedListResult = Role;
 export const RoleCreateResultSchema = RoleSchema;
 export type RoleCreateResult = Role;
 

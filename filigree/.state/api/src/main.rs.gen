@@ -191,6 +191,7 @@ async fn serve(cmd: ServeCommand) -> Result<(), Report<Error>> {
                 .same_org_invites_require_email_verification,
         },
         pg_pool,
+        secrets: server::Secrets::from_env()?,
         queue_path: std::path::PathBuf::from(cmd.queue_path),
         init_recurring_jobs: true,
         storage: sbbp_api::storage::AppStorageConfig::new().change_context(Error::ServerStart)?,

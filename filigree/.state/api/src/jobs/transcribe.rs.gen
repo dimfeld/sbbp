@@ -1,4 +1,4 @@
-//! extract background job
+//! transcribe background job
 #![allow(unused_imports, unused_variables, dead_code)]
 
 use effectum::{JobBuilder, JobRunner, Queue, RecurringJobSchedule, RunningJob};
@@ -9,24 +9,24 @@ use serde_json::json;
 use super::JobError;
 use crate::server::ServerState;
 
-/// The payload data for the extract background job
+/// The payload data for the transcribe background job
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ExtractJobPayload {
+pub struct TranscribeJobPayload {
     // Fill in your payload data here
 }
 
-/// Run the extract background job
+/// Run the transcribe background job
 async fn run(job: RunningJob, state: ServerState) -> Result<(), error_stack::Report<JobError>> {
-    let payload: ExtractJobPayload = job.json_payload().change_context(JobError::Payload)?;
+    let payload: TranscribeJobPayload = job.json_payload().change_context(JobError::Payload)?;
 
     Ok(())
 }
 
-/// Enqueue the extract job to run immediately
+/// Enqueue the transcribe job to run immediately
 pub async fn enqueue(
     state: &ServerState,
     name: impl ToString,
-    payload: &ExtractJobPayload,
+    payload: &TranscribeJobPayload,
 ) -> Result<uuid::Uuid, effectum::Error> {
     create_job_builder()
         .name(name)
@@ -35,12 +35,12 @@ pub async fn enqueue(
         .await
 }
 
-/// Enqueue the extract job to run at a specific time
+/// Enqueue the transcribe job to run at a specific time
 pub async fn enqueue_at(
     state: &ServerState,
     name: impl ToString,
     at: chrono::DateTime<chrono::Utc>,
-    payload: &ExtractJobPayload,
+    payload: &TranscribeJobPayload,
 ) -> Result<uuid::Uuid, effectum::Error> {
     // convert to time crate
     let timestamp = at.timestamp();
@@ -60,7 +60,7 @@ pub async fn register(
     queue: &Queue,
     init_recurring_jobs: bool,
 ) -> Result<JobRunner<ServerState>, effectum::Error> {
-    let runner = JobRunner::builder("extract", run)
+    let runner = JobRunner::builder("transcribe", run)
         .autoheartbeat(false)
         .format_failures_with_debug(true)
         .build();
@@ -69,5 +69,5 @@ pub async fn register(
 }
 
 fn create_job_builder() -> JobBuilder {
-    JobBuilder::new("extract").priority(1).weight(1)
+    JobBuilder::new("transcribe").priority(1).weight(1)
 }

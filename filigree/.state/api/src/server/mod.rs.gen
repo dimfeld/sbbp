@@ -55,6 +55,8 @@ pub struct ServerStateInner {
     pub filigree: Arc<FiligreeState>,
     /// The Postgres database connection pool
     pub db: PgPool,
+    /// Secrets loaded from the environment
+    pub secrets: Secrets,
     pub queue: effectum::Queue,
     /// Object storage providers
     pub storage: storage::AppStorage,
@@ -113,6 +115,35 @@ impl FromRef<ServerState> for PgPool {
 impl FromRef<ServerState> for SessionBackend {
     fn from_ref(inner: &ServerState) -> Self {
         inner.0.session_backend.clone()
+    }
+}
+
+pub struct Secrets {
+    pub anthropic: String,
+    pub deepgram: String,
+}
+
+impl Secrets {
+    /// Load the secrets from the environment
+    pub fn from_env() -> Result<Secrets, Report<Error>> {
+        Ok(Self {
+            anthropic: std::env::var("ANTHROPIC_API_KEY")
+                .change_context(Error::Config)
+                .attach_printable("Missing environment variable ANTHROPIC_API_KEY")?,
+            deepgram: std::env::var("DEEPGRAM_API_KEY")
+                .change_context(Error::Config)
+                .attach_printable("Missing environment variable DEEPGRAM_API_KEY")?,
+        })
+    }
+
+    #[cfg(test)]
+    /// Create a new Secrets struct with all the strings empty, for testing where we don't need any
+    /// secrets.
+    pub fn empty() -> Secrets {
+        Secrets {
+            anthropic: String::new(),
+            deepgram: String::new(),
+        }
     }
 }
 
@@ -223,6 +254,9 @@ pub struct Config {
     /// OAuth can be disabled, regardless of environment variable settings, but passing `Some(Vec::new())`.
     pub oauth_providers: Option<Vec<Box<dyn OAuthProvider>>>,
 
+    /// Secrets for the server. Most often this should be initialized using [Secrets::from_env].
+    pub secrets: Secrets,
+
     /// The path to the queue file
     pub queue_path: std::path::PathBuf,
     /// Set up recurring jobs. This should generally be true for normal operation and false for
@@ -278,8 +312,8 @@ pub async fn create_server(config: Config) -> Result<Server, Report<Error>> {
         }),
         insecure: config.insecure,
         db: config.pg_pool.clone(),
+        secrets: config.secrets,
         queue,
-
         storage: storage::AppStorage::new(config.storage).change_context(Error::ServerStart)?,
     }));
 

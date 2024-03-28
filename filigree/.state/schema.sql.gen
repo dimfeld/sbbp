@@ -51,7 +51,6 @@ CREATE TABLE videos (
   created_at timestamptz NOT NULL DEFAULT now(),
   processing_state text NOT NULL,
   url text,
-  images jsonb,
   title text,
   duration integer,
   author text,
@@ -59,6 +58,8 @@ CREATE TABLE videos (
   metadata jsonb,
   read boolean NOT NULL DEFAULT FALSE,
   progress integer NOT NULL DEFAULT 0,
+  images jsonb,
+  transcript jsonb,
   summary text,
   processed_path text
 );

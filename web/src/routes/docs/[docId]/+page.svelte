@@ -4,12 +4,12 @@
   import { Button } from '$lib/components/ui/button';
   import DocSettings from './DocSettings.svelte';
 
-  export let data;
+  const { data } = $props();
 
-  let showRemoved = false;
+  let showRemoved = $state(false);
 
-  $: removed = new Set(data.item.images.removed);
-  $: aligned = align(data.item, data.text);
+  let removed = $derived(new Set(data.item.images.removed));
+  let aligned = $derived(align(data.item, data.text));
 
   function imageRange([start, end]: number[], showRemoved: boolean) {
     if (start == end) {
@@ -29,7 +29,7 @@
     }
   }
 
-  let largeImage: number | null = null;
+  let largeImage: number | null = $state(null);
 </script>
 
 <label class="fixed right-2 top-2 z-10">

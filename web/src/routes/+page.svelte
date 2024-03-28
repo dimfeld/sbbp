@@ -16,24 +16,27 @@
   import { formatDuration } from '$lib/format.js';
   import { invalidate } from '$app/navigation';
 
-  export let data;
-  export let form;
+  const { data, form } = $props();
 
   let unreadOnly = true;
 
   let timer: number | null = null;
-  $: if (
-    browser &&
-    !timer &&
-    data.items.some((item) => (item.viewerData.processStatus ?? 'complete') !== 'complete')
-  ) {
-    timer = window.setTimeout(() => {
-      timer = null;
-      invalidate('resource://items');
-    }, 5000);
-  }
+  $effect(() => {
+    if (
+      browser &&
+      !timer &&
+      data.items.some((item) => (item.viewerData.processStatus ?? 'complete') !== 'complete')
+    ) {
+      timer = window.setTimeout(() => {
+        timer = null;
+        invalidate('resource://items');
+      }, 5000);
+    }
+  });
 
-  $: items = unreadOnly ? data.items.filter((item) => !item.viewerData.read) : data.items;
+  let items = $derived(
+    unreadOnly ? data.items.filter((item) => !item.viewerData.read) : data.items
+  );
 </script>
 
 <main class="relative p-4 flex flex-col gap-4">

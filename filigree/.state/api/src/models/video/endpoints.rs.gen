@@ -106,11 +106,6 @@ pub fn create_routes() -> axum::Router<ServerState> {
             routing::get(get).route_layer(has_any_permission(vec![READ_PERMISSION, "org_admin"])),
         )
         .route(
-            "/videos",
-            routing::post(create)
-                .route_layer(has_any_permission(vec![CREATE_PERMISSION, "org_admin"])),
-        )
-        .route(
             "/videos/:id",
             routing::put(update).route_layer(has_any_permission(vec![
                 WRITE_PERMISSION,
@@ -222,25 +217,11 @@ mod test {
                 serde_json::to_value(&added.processing_state).unwrap(),
                 "field processing_state"
             );
-
-            assert_eq!(
-                payload.processing_state, added.processing_state,
-                "create result field processing_state"
-            );
             assert_eq!(
                 result["url"],
                 serde_json::to_value(&added.url).unwrap(),
                 "field url"
             );
-
-            assert_eq!(payload.url, added.url, "create result field url");
-            assert_eq!(
-                result["images"],
-                serde_json::to_value(&added.images).unwrap(),
-                "field images"
-            );
-
-            assert_eq!(payload.images, added.images, "create result field images");
             assert_eq!(
                 result["title"],
                 serde_json::to_value(&added.title).unwrap(),
@@ -253,34 +234,20 @@ mod test {
                 serde_json::to_value(&added.duration).unwrap(),
                 "field duration"
             );
-
-            assert_eq!(
-                payload.duration, added.duration,
-                "create result field duration"
-            );
             assert_eq!(
                 result["author"],
                 serde_json::to_value(&added.author).unwrap(),
                 "field author"
             );
-
-            assert_eq!(payload.author, added.author, "create result field author");
             assert_eq!(
                 result["date"],
                 serde_json::to_value(&added.date).unwrap(),
                 "field date"
             );
-
-            assert_eq!(payload.date, added.date, "create result field date");
             assert_eq!(
                 result["metadata"],
                 serde_json::to_value(&added.metadata).unwrap(),
                 "field metadata"
-            );
-
-            assert_eq!(
-                payload.metadata, added.metadata,
-                "create result field metadata"
             );
             assert_eq!(
                 result["read"],
@@ -300,24 +267,24 @@ mod test {
                 "create result field progress"
             );
             assert_eq!(
+                result["images"],
+                serde_json::to_value(&added.images).unwrap(),
+                "field images"
+            );
+            assert_eq!(
+                result["transcript"],
+                serde_json::to_value(&added.transcript).unwrap(),
+                "field transcript"
+            );
+            assert_eq!(
                 result["summary"],
                 serde_json::to_value(&added.summary).unwrap(),
                 "field summary"
-            );
-
-            assert_eq!(
-                payload.summary, added.summary,
-                "create result field summary"
             );
             assert_eq!(
                 result["processed_path"],
                 serde_json::to_value(&added.processed_path).unwrap(),
                 "field processed_path"
-            );
-
-            assert_eq!(
-                payload.processed_path, added.processed_path,
-                "create result field processed_path"
             );
 
             assert_eq!(result["_permission"], "owner");
@@ -372,11 +339,6 @@ mod test {
                 "list result field url"
             );
             assert_eq!(
-                result["images"],
-                serde_json::to_value(&added.images).unwrap(),
-                "list result field images"
-            );
-            assert_eq!(
                 result["title"],
                 serde_json::to_value(&added.title).unwrap(),
                 "list result field title"
@@ -410,6 +372,16 @@ mod test {
                 result["progress"],
                 serde_json::to_value(&added.progress).unwrap(),
                 "list result field progress"
+            );
+            assert_eq!(
+                result["images"],
+                serde_json::to_value(&added.images).unwrap(),
+                "list result field images"
+            );
+            assert_eq!(
+                result["transcript"],
+                serde_json::to_value(&added.transcript).unwrap(),
+                "list result field transcript"
             );
             assert_eq!(
                 result["summary"],
@@ -529,25 +501,11 @@ mod test {
             serde_json::to_value(&added.processing_state).unwrap(),
             "get result field processing_state"
         );
-
-        assert_eq!(
-            added.processing_state, payload.processing_state,
-            "create result field processing_state"
-        );
         assert_eq!(
             result["url"],
             serde_json::to_value(&added.url).unwrap(),
             "get result field url"
         );
-
-        assert_eq!(added.url, payload.url, "create result field url");
-        assert_eq!(
-            result["images"],
-            serde_json::to_value(&added.images).unwrap(),
-            "get result field images"
-        );
-
-        assert_eq!(added.images, payload.images, "create result field images");
         assert_eq!(
             result["title"],
             serde_json::to_value(&added.title).unwrap(),
@@ -560,34 +518,20 @@ mod test {
             serde_json::to_value(&added.duration).unwrap(),
             "get result field duration"
         );
-
-        assert_eq!(
-            added.duration, payload.duration,
-            "create result field duration"
-        );
         assert_eq!(
             result["author"],
             serde_json::to_value(&added.author).unwrap(),
             "get result field author"
         );
-
-        assert_eq!(added.author, payload.author, "create result field author");
         assert_eq!(
             result["date"],
             serde_json::to_value(&added.date).unwrap(),
             "get result field date"
         );
-
-        assert_eq!(added.date, payload.date, "create result field date");
         assert_eq!(
             result["metadata"],
             serde_json::to_value(&added.metadata).unwrap(),
             "get result field metadata"
-        );
-
-        assert_eq!(
-            added.metadata, payload.metadata,
-            "create result field metadata"
         );
         assert_eq!(
             result["read"],
@@ -607,24 +551,24 @@ mod test {
             "create result field progress"
         );
         assert_eq!(
+            result["images"],
+            serde_json::to_value(&added.images).unwrap(),
+            "get result field images"
+        );
+        assert_eq!(
+            result["transcript"],
+            serde_json::to_value(&added.transcript).unwrap(),
+            "get result field transcript"
+        );
+        assert_eq!(
             result["summary"],
             serde_json::to_value(&added.summary).unwrap(),
             "get result field summary"
-        );
-
-        assert_eq!(
-            added.summary, payload.summary,
-            "create result field summary"
         );
         assert_eq!(
             result["processed_path"],
             serde_json::to_value(&added.processed_path).unwrap(),
             "get result field processed_path"
-        );
-
-        assert_eq!(
-            added.processed_path, payload.processed_path,
-            "create result field processed_path"
         );
 
         assert_eq!(result["_permission"], "owner");
@@ -674,11 +618,6 @@ mod test {
             "get result field url"
         );
         assert_eq!(
-            result["images"],
-            serde_json::to_value(&added.images).unwrap(),
-            "get result field images"
-        );
-        assert_eq!(
             result["title"],
             serde_json::to_value(&added.title).unwrap(),
             "get result field title"
@@ -712,6 +651,16 @@ mod test {
             result["progress"],
             serde_json::to_value(&added.progress).unwrap(),
             "get result field progress"
+        );
+        assert_eq!(
+            result["images"],
+            serde_json::to_value(&added.images).unwrap(),
+            "get result field images"
+        );
+        assert_eq!(
+            result["transcript"],
+            serde_json::to_value(&added.transcript).unwrap(),
+            "get result field transcript"
         );
         assert_eq!(
             result["summary"],
@@ -775,44 +724,9 @@ mod test {
             .unwrap();
 
         assert_eq!(
-            updated["processing_state"],
-            serde_json::to_value(&update_payload.processing_state).unwrap(),
-            "field processing_state"
-        );
-        assert_eq!(
-            updated["url"],
-            serde_json::to_value(&update_payload.url).unwrap(),
-            "field url"
-        );
-        assert_eq!(
-            updated["images"],
-            serde_json::to_value(&update_payload.images).unwrap(),
-            "field images"
-        );
-        assert_eq!(
             updated["title"],
             serde_json::to_value(&update_payload.title).unwrap(),
             "field title"
-        );
-        assert_eq!(
-            updated["duration"],
-            serde_json::to_value(&update_payload.duration).unwrap(),
-            "field duration"
-        );
-        assert_eq!(
-            updated["author"],
-            serde_json::to_value(&update_payload.author).unwrap(),
-            "field author"
-        );
-        assert_eq!(
-            updated["date"],
-            serde_json::to_value(&update_payload.date).unwrap(),
-            "field date"
-        );
-        assert_eq!(
-            updated["metadata"],
-            serde_json::to_value(&update_payload.metadata).unwrap(),
-            "field metadata"
         );
         assert_eq!(
             updated["read"],
@@ -823,16 +737,6 @@ mod test {
             updated["progress"],
             serde_json::to_value(&update_payload.progress).unwrap(),
             "field progress"
-        );
-        assert_eq!(
-            updated["summary"],
-            serde_json::to_value(&update_payload.summary).unwrap(),
-            "field summary"
-        );
-        assert_eq!(
-            updated["processed_path"],
-            serde_json::to_value(&update_payload.processed_path).unwrap(),
-            "field processed_path"
         );
         assert_eq!(updated["_permission"], "owner");
 
@@ -884,11 +788,6 @@ mod test {
             "field url"
         );
         assert_eq!(
-            non_updated["images"],
-            serde_json::to_value(&added_objects[0].1.images).unwrap(),
-            "field images"
-        );
-        assert_eq!(
             non_updated["title"],
             serde_json::to_value(&added_objects[0].1.title).unwrap(),
             "field title"
@@ -924,6 +823,16 @@ mod test {
             "field progress"
         );
         assert_eq!(
+            non_updated["images"],
+            serde_json::to_value(&added_objects[0].1.images).unwrap(),
+            "field images"
+        );
+        assert_eq!(
+            non_updated["transcript"],
+            serde_json::to_value(&added_objects[0].1.transcript).unwrap(),
+            "field transcript"
+        );
+        assert_eq!(
             non_updated["summary"],
             serde_json::to_value(&added_objects[0].1.summary).unwrap(),
             "field summary"
@@ -943,184 +852,6 @@ mod test {
             .await
             .unwrap();
 
-        assert_eq!(response.status(), reqwest::StatusCode::FORBIDDEN);
-    }
-
-    #[sqlx::test]
-    async fn create_object(pool: sqlx::PgPool) {
-        let (
-            _app,
-            BootstrappedData {
-                admin_user,
-                no_roles_user,
-                ..
-            },
-        ) = start_app(pool.clone()).await;
-
-        let create_payload = make_create_payload(10);
-        let created_result: serde_json::Value = admin_user
-            .client
-            .post("videos")
-            .json(&create_payload)
-            .send()
-            .await
-            .unwrap()
-            .log_error()
-            .await
-            .unwrap()
-            .json()
-            .await
-            .unwrap();
-
-        assert_eq!(
-            created_result["processing_state"],
-            serde_json::to_value(&create_payload.processing_state).unwrap(),
-            "field processing_state from create response"
-        );
-        assert_eq!(
-            created_result["url"],
-            serde_json::to_value(&create_payload.url).unwrap(),
-            "field url from create response"
-        );
-        assert_eq!(
-            created_result["images"],
-            serde_json::to_value(&create_payload.images).unwrap(),
-            "field images from create response"
-        );
-        assert_eq!(
-            created_result["title"],
-            serde_json::to_value(&create_payload.title).unwrap(),
-            "field title from create response"
-        );
-        assert_eq!(
-            created_result["duration"],
-            serde_json::to_value(&create_payload.duration).unwrap(),
-            "field duration from create response"
-        );
-        assert_eq!(
-            created_result["author"],
-            serde_json::to_value(&create_payload.author).unwrap(),
-            "field author from create response"
-        );
-        assert_eq!(
-            created_result["date"],
-            serde_json::to_value(&create_payload.date).unwrap(),
-            "field date from create response"
-        );
-        assert_eq!(
-            created_result["metadata"],
-            serde_json::to_value(&create_payload.metadata).unwrap(),
-            "field metadata from create response"
-        );
-        assert_eq!(
-            created_result["read"],
-            serde_json::to_value(&create_payload.read).unwrap(),
-            "field read from create response"
-        );
-        assert_eq!(
-            created_result["progress"],
-            serde_json::to_value(&create_payload.progress).unwrap(),
-            "field progress from create response"
-        );
-        assert_eq!(
-            created_result["summary"],
-            serde_json::to_value(&create_payload.summary).unwrap(),
-            "field summary from create response"
-        );
-        assert_eq!(
-            created_result["processed_path"],
-            serde_json::to_value(&create_payload.processed_path).unwrap(),
-            "field processed_path from create response"
-        );
-        assert_eq!(created_result["_permission"], "owner");
-
-        let created_id = created_result["id"].as_str().unwrap();
-        let get_result = admin_user
-            .client
-            .get(&format!("videos/{}", created_id))
-            .send()
-            .await
-            .unwrap()
-            .log_error()
-            .await
-            .unwrap()
-            .json::<serde_json::Value>()
-            .await
-            .unwrap();
-
-        assert_eq!(
-            get_result["id"], created_result["id"],
-            "field id from get response"
-        );
-        assert_eq!(
-            get_result["organization_id"], created_result["organization_id"],
-            "field organization_id from get response"
-        );
-        assert_eq!(
-            get_result["updated_at"], created_result["updated_at"],
-            "field updated_at from get response"
-        );
-        assert_eq!(
-            get_result["created_at"], created_result["created_at"],
-            "field created_at from get response"
-        );
-        assert_eq!(
-            get_result["processing_state"], created_result["processing_state"],
-            "field processing_state from get response"
-        );
-        assert_eq!(
-            get_result["url"], created_result["url"],
-            "field url from get response"
-        );
-        assert_eq!(
-            get_result["images"], created_result["images"],
-            "field images from get response"
-        );
-        assert_eq!(
-            get_result["title"], created_result["title"],
-            "field title from get response"
-        );
-        assert_eq!(
-            get_result["duration"], created_result["duration"],
-            "field duration from get response"
-        );
-        assert_eq!(
-            get_result["author"], created_result["author"],
-            "field author from get response"
-        );
-        assert_eq!(
-            get_result["date"], created_result["date"],
-            "field date from get response"
-        );
-        assert_eq!(
-            get_result["metadata"], created_result["metadata"],
-            "field metadata from get response"
-        );
-        assert_eq!(
-            get_result["read"], created_result["read"],
-            "field read from get response"
-        );
-        assert_eq!(
-            get_result["progress"], created_result["progress"],
-            "field progress from get response"
-        );
-        assert_eq!(
-            get_result["summary"], created_result["summary"],
-            "field summary from get response"
-        );
-        assert_eq!(
-            get_result["processed_path"], created_result["processed_path"],
-            "field processed_path from get response"
-        );
-        assert_eq!(get_result["_permission"], "owner");
-
-        let response = no_roles_user
-            .client
-            .post("videos")
-            .json(&create_payload)
-            .send()
-            .await
-            .unwrap();
         assert_eq!(response.status(), reqwest::StatusCode::FORBIDDEN);
     }
 
