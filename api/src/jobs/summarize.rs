@@ -20,8 +20,35 @@ async fn run(job: RunningJob, state: ServerState) -> Result<(), error_stack::Rep
     let payload: SummarizeJobPayload = job.json_payload().change_context(JobError::Payload)?;
 
     // Get the transcript from the database
+    let transcript: serde_json::Value = sqlx::query_scalar!(
+        "SELECT transcript FROM videos WHERE id = $1",
+        payload.id.as_uuid()
+    )
+    .fetch_one(&state.db)
+    .await
+    .change_context(JobError::Db)?
+    .ok_or(JobError::NoTranscript)
+    .attach_printable("Video row had no transcript object")?;
+
     // Send it to the LLM for summary
+    let joined_text = transcript["results"][0]["channels"][0]["alternatives"][0]["paragraphs"]
+        ["transcript"]
+        .as_str()
+        .ok_or(JobError::NoTranscript)
+        .attach_printable("Found object but transcript was not at the expected path")?
+        .trim();
+
+    let summary: String = todo!();
+
     // Store the summary in the database and set processing_state to Ready
+    sqlx::query!(
+        "UPDATE videos SET summary = $1, processing_state = 'ready' WHERE id = $2",
+        summary,
+        payload.id.as_uuid()
+    )
+    .execute(&state.db)
+    .await
+    .change_context(JobError::Db)?;
 
     Ok(())
 }

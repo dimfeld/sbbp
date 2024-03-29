@@ -51,6 +51,8 @@ enum JobError {
     CalculatingSimilarity,
     #[error("Failed to transcribe audio")]
     Transcribe,
+    #[error("Video did not have a transcript")]
+    NoTranscript,
 }
 
 pub struct QueueWorkers {
