@@ -132,7 +132,8 @@ async fn run(job: RunningJob, state: ServerState) -> Result<(), error_stack::Rep
         video_storage_path,
         json!({
             "download": {
-                "duration": elapsed.as_secs()
+                "duration": elapsed.as_secs(),
+                "filename": video_filename,
             }
         }),
     )

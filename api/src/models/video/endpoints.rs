@@ -16,6 +16,7 @@ use filigree::{
 };
 use schemars::JsonSchema;
 use serde::Deserialize;
+use serde_json::json;
 use tracing::{event, Level};
 use url::Url;
 
@@ -25,6 +26,10 @@ use super::{
 };
 use crate::{
     auth::{has_any_permission, Authed},
+    jobs::{
+        analyze::AnalyzeJobPayload, download::DownloadJobPayload, extract::ExtractJobPayload,
+        summarize::SummarizeJobPayload, transcribe::TranscribeJobPayload,
+    },
     server::ServerState,
     Error,
 };
@@ -137,10 +142,90 @@ async fn create_via_url(
     Ok(())
 }
 
+async fn rerun_stage(
+    State(state): State<ServerState>,
+    auth: Authed,
+    Path((id, stage)): Path<(VideoId, String)>,
+) -> Result<impl IntoResponse, Error> {
+    let video = queries::get(&state.db, &auth, id).await?;
+    let storage_prefix = video.id.to_string();
+
+    let result = match stage.as_str() {
+        "download" => {
+            let url = video
+                .url
+                .ok_or(Error::NotFound("Video URL"))
+                .attach_printable("Missing URL")?;
+            crate::jobs::download::enqueue(
+                &state,
+                id,
+                &DownloadJobPayload {
+                    id: video.id,
+                    storage_prefix,
+                    download_url: url,
+                },
+            )
+            .await
+        }
+        "extract" => {
+            let video_filename = video
+                .metadata
+                .and_then(|m| m["download"]["filename"].as_str().map(|s| s.to_string()))
+                .ok_or(Error::NotFound("Video not downloaded yet"))?;
+            crate::jobs::extract::enqueue(
+                &state,
+                id,
+                &ExtractJobPayload {
+                    id,
+                    storage_prefix,
+                    video_filename,
+                },
+            )
+            .await
+        }
+        "analyze" => {
+            let max_index = video
+                .images
+                .map(|i| i.max_index)
+                .ok_or(Error::NotFound("Video not extracted yet"))?;
+            crate::jobs::analyze::enqueue(
+                &state,
+                id,
+                &AnalyzeJobPayload {
+                    id,
+                    storage_prefix,
+                    max_index,
+                },
+            )
+            .await
+        }
+        "transcribe" => {
+            crate::jobs::transcribe::enqueue(
+                &state,
+                id,
+                &TranscribeJobPayload {
+                    id,
+                    audio_path: format!("{storage_prefix}/audio.mp4"),
+                    storage_prefix,
+                },
+            )
+            .await
+        }
+        "summarize" => {
+            crate::jobs::summarize::enqueue(&state, id, &SummarizeJobPayload { id }).await
+        }
+        _ => return Err(Error::NotFound("Unknown stage")),
+    };
+
+    let job_id = result.change_context(Error::TaskQueue)?;
+
+    Ok(Json(json!({ "job_id": job_id })))
+}
+
 pub fn create_routes() -> axum::Router<ServerState> {
     axum::Router::new()
         .route(
-            "/download_video",
+            "/add_video",
             routing::post(create_via_url)
                 .route_layer(has_any_permission(vec![OWNER_PERMISSION, "org_admin"])),
         )
@@ -164,6 +249,11 @@ pub fn create_routes() -> axum::Router<ServerState> {
             "/videos/:id",
             routing::delete(delete)
                 .route_layer(has_any_permission(vec![CREATE_PERMISSION, "org_admin"])),
+        )
+        .route(
+            "/videos/:id/rerun/:stage",
+            routing::post(rerun_stage)
+                .route_layer(has_any_permission(vec![OWNER_PERMISSION, "org_admin"])),
         )
 }
 

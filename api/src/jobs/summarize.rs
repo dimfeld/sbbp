@@ -31,9 +31,9 @@ async fn run(job: RunningJob, state: ServerState) -> Result<(), error_stack::Rep
     .attach_printable("Video row had no transcript object")?;
 
     // Send it to the LLM for summary
-    let joined_text = transcript["results"][0]["channels"][0]["alternatives"][0]["paragraphs"]
-        ["transcript"]
-        .as_str()
+    let joined_text = transcript
+        .pointer("/results/channels/0/alternatives/0/paragraphs/transcript")
+        .and_then(|v| v.as_str())
         .ok_or(JobError::NoTranscript)
         .attach_printable("Found object but transcript was not at the expected path")?
         .trim();

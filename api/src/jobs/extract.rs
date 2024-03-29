@@ -68,6 +68,7 @@ async fn run(job: RunningJob, state: ServerState) -> Result<(), error_stack::Rep
         json!({
             "audio_extraction": {
                 "duration": audio_duration.as_secs(),
+                "filename": "audio.mp4",
             },
             "image_extraction": {
                 "duration": image_duration.as_secs(),
