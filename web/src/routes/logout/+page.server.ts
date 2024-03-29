@@ -1,6 +1,6 @@
-import { logout } from "filigree-web";
+import { logout } from 'filigree-web';
 
 export async function load(event) {
-	await logout(event);
-	return {};
+  await logout(event);
+  return {};
 }

@@ -1,33 +1,33 @@
-import type { RequestHandler } from "@sveltejs/kit";
-import { client, cookiesToHeaders } from "filigree-web";
+import type { RequestHandler } from '@sveltejs/kit';
+import { client, cookiesToHeaders } from 'filigree-web';
 
 export const GET: RequestHandler = async ({ url, params, fetch }) => {
-	const provider = params.provider;
+  const provider = params.provider;
 
-	const response = await client({
-		url: `/api/auth/oauth/login/${provider}/callback`,
-		fetch,
-		query: url.searchParams,
-		tolerateFailure: true,
-	});
+  const response = await client({
+    url: `/api/auth/oauth/login/${provider}/callback`,
+    fetch,
+    query: url.searchParams,
+    tolerateFailure: true,
+  });
 
-	let message: string;
-	if (response.ok) {
-		message = "{success:true}";
-	} else if (response.headers.get("content-type")?.includes("json")) {
-		// It's already JSON so no need to decode and re-encode it.
-		message = await response.text();
-	} else {
-		// Something went more wrong
-		message = JSON.stringify({ error: response.statusText });
-	}
+  let message: string;
+  if (response.ok) {
+    message = '{success:true}';
+  } else if (response.headers.get('content-type')?.includes('json')) {
+    // It's already JSON so no need to decode and re-encode it.
+    message = await response.text();
+  } else {
+    // Something went more wrong
+    message = JSON.stringify({ error: response.statusText });
+  }
 
-	let headers = cookiesToHeaders(response, {
-		"Content-Type": "text/html; charset=utf-8",
-	});
+  let headers = cookiesToHeaders(response, {
+    'Content-Type': 'text/html; charset=utf-8',
+  });
 
-	return new Response(
-		`
+  return new Response(
+    `
     <html>
     <head>
       <script>
@@ -40,8 +40,8 @@ export const GET: RequestHandler = async ({ url, params, fetch }) => {
     </body>
     </html>
     `,
-		{
-			headers,
-		},
-	);
+    {
+      headers,
+    }
+  );
 };

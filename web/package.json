@@ -37,6 +37,7 @@
   },
   "type": "module",
   "dependencies": {
+    "@deepgram/sdk": "^3.2.0",
     "bits-ui": "^0.9.8",
     "clsx": "^2.0.0",
     "execa": "^8.0.1",
