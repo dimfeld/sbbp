@@ -53,6 +53,8 @@ enum JobError {
     Transcribe,
     #[error("Video did not have a transcript")]
     NoTranscript,
+    #[error("Failed calling summarize API")]
+    Summarizing,
 }
 
 pub struct QueueWorkers {

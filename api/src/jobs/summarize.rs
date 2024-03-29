@@ -3,11 +3,16 @@
 
 use effectum::{JobBuilder, JobRunner, Queue, RecurringJobSchedule, RunningJob};
 use error_stack::ResultExt;
+use filigree::testing::ResponseExt;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
 use super::JobError;
 use crate::{models::video::VideoId, server::ServerState};
+
+const SYSTEM_PROMPT: &str = "Your task is to summarize Youtube video transcripts. Clearly explain the topics discussed, and notable or surprising details, and the general sentiment around them.";
+const SUMMARIZE_PROMPT_PREFIX: &str = "The video transcript follows:";
+const SUMMARIZE_ASSISTANT_PREFIX: &str = "The summary of the above transcript is:";
 
 /// The payload data for the summarize background job
 #[derive(Debug, Serialize, Deserialize)]
@@ -31,14 +36,45 @@ async fn run(job: RunningJob, state: ServerState) -> Result<(), error_stack::Rep
     .attach_printable("Video row had no transcript object")?;
 
     // Send it to the LLM for summary
-    let joined_text = transcript
+    let transcript_text = transcript
         .pointer("/results/channels/0/alternatives/0/paragraphs/transcript")
         .and_then(|v| v.as_str())
         .ok_or(JobError::NoTranscript)
         .attach_printable("Found object but transcript was not at the expected path")?
         .trim();
 
-    let summary: String = todo!();
+    let summary_request = json!({
+        "model": "claude-3-haiku-20240307",
+        "max_tokens": 768,
+        "temperature": 0.5,
+        "system": SYSTEM_PROMPT,
+        "messages": [
+            { "role": "user", "content": format!("{SUMMARIZE_PROMPT_PREFIX}:\n\n{transcript_text}") },
+            { "role": "assistant", "content": SUMMARIZE_ASSISTANT_PREFIX }
+        ]
+    });
+
+    let result: serde_json::Value = state
+        .filigree
+        .http_client
+        .post("https://api.anthropic.com/v1/messages")
+        .header("x-api-key", &state.secrets.anthropic)
+        .header("x-anthropic-version", "2023-06-01")
+        .json(&summary_request)
+        .send()
+        .await
+        .change_context(JobError::Summarizing)?
+        .log_error()
+        .await
+        .change_context(JobError::Summarizing)?
+        .json()
+        .await
+        .change_context(JobError::Summarizing)?;
+
+    let summary = result["content"][0]["text"]
+        .as_str()
+        .ok_or(JobError::Summarizing)
+        .attach_printable("Failed to find summary in response")?;
 
     // Store the summary in the database and set processing_state to Ready
     sqlx::query!(
