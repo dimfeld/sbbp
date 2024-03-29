@@ -20,7 +20,7 @@ dotenv = true
 hosts = ["localhost"]
 
 [formatter]
-js = ["biome", "format", "--stdin-file-path=stdin.ts" ]
+js = ["prettierd", "stdin.ts" ]
 rust = ["rustfmt", "+nightly"]
 sql = ["pg_format"]
 

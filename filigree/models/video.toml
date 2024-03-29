@@ -6,6 +6,7 @@ allow_id_in_create = true
 name = "processing_state"
 type = "text"
 rust_type = "crate::models::video::VideoProcessingState"
+zod_type = "z.custom<VideoProcessingState>()"
 owner_access = "read"
 user_access = "read"
 
@@ -79,6 +80,7 @@ user_access = "read"
 [[fields]]
 name = "transcript"
 type = "json"
+zod_type = "z.custom<VideoTranscript>()"
 omit_in_list = true
 nullable = true
 owner_access = "read"
