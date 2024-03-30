@@ -105,19 +105,19 @@ async fn delete(
 }
 
 #[derive(serde::Deserialize, serde::Serialize, Debug, JsonSchema)]
-pub struct CreateViaUrlInput {
+pub struct CreateViaUrlPayload {
     pub url: String,
 }
 
 #[derive(serde::Deserialize, serde::Serialize, Debug, JsonSchema)]
-pub struct CreateViaUrlOutput {
+pub struct CreateViaUrlResponse {
     pub id: VideoId,
 }
 
 async fn create_via_url(
     State(state): State<ServerState>,
     auth: Authed,
-    FormOrJson(payload): FormOrJson<CreateViaUrlInput>,
+    FormOrJson(payload): FormOrJson<CreateViaUrlPayload>,
 ) -> Result<impl IntoResponse, Error> {
     let id = VideoId::new();
     sqlx::query!(
@@ -145,16 +145,16 @@ async fn create_via_url(
     .change_context(Error::TaskQueue)
     .attach_printable("Failed to enqueue download job")?;
 
-    let output = CreateViaUrlOutput { id };
+    let output = CreateViaUrlResponse { id };
 
     Ok(Json(output))
 }
 
 #[derive(serde::Deserialize, serde::Serialize, Debug, JsonSchema)]
-pub struct RerunStageInput {}
+pub struct RerunStagePayload {}
 
 #[derive(serde::Deserialize, serde::Serialize, Debug, JsonSchema)]
-pub struct RerunStageOutput {
+pub struct RerunStageResponse {
     pub job_id: uuid::Uuid,
 }
 
@@ -162,7 +162,7 @@ async fn rerun_stage(
     State(state): State<ServerState>,
     auth: Authed,
     Path((id, stage)): Path<(VideoId, String)>,
-    FormOrJson(payload): FormOrJson<RerunStageInput>,
+    // FormOrJson(payload): FormOrJson<RerunStagePayload>,
 ) -> Result<impl IntoResponse, Error> {
     let video = queries::get(&state.db, &auth, id).await?;
     let storage_prefix = video.id.to_string();
@@ -236,24 +236,24 @@ async fn rerun_stage(
 
     let job_id = result.change_context(Error::TaskQueue)?;
 
-    let output = RerunStageOutput { job_id };
+    let output = RerunStageResponse { job_id };
 
     Ok(Json(output))
 }
 
 #[derive(serde::Deserialize, serde::Serialize, Debug, JsonSchema)]
-pub struct MarkReadInput {
+pub struct MarkReadPayload {
     pub read: bool,
 }
 
 #[derive(serde::Deserialize, serde::Serialize, Debug, JsonSchema)]
-pub struct MarkReadOutput {}
+pub struct MarkReadResponse {}
 
 async fn mark_read(
     State(state): State<ServerState>,
     auth: Authed,
     Path(id): Path<VideoId>,
-    FormOrJson(payload): FormOrJson<MarkReadInput>,
+    FormOrJson(payload): FormOrJson<MarkReadPayload>,
 ) -> Result<impl IntoResponse, Error> {
     sqlx::query!(
         "UPDATE videos
@@ -267,7 +267,7 @@ async fn mark_read(
     .await
     .change_context(Error::Db)?;
 
-    let output = MarkReadOutput {};
+    let output = MarkReadResponse {};
 
     Ok(Json(output))
 }

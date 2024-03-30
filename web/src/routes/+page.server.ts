@@ -1,17 +1,12 @@
-import { redirect, type Actions, fail } from '@sveltejs/kit';
-import {
-  deleteItem,
-  enqueueNewItem,
-  listItems,
-  loadNewItem,
-  reloadItem,
-  reprocessItem,
-  updateReadState,
-} from '$lib/server/data';
+import { create_via_url, mark_read, rerun_stage, type VideoListResult } from '$lib/models/video';
+import { type Actions, fail } from '@sveltejs/kit';
+import { client } from 'filigree-web';
 
 export async function load({ depends }) {
   depends('resource://items');
-  const items = listItems();
+  const items = await client({
+    url: '/api/videos',
+  }).json<VideoListResult>();
 
   return {
     items,
@@ -21,53 +16,29 @@ export async function load({ depends }) {
 export const actions = {
   download: async (event) => {
     const formData = await event.request.formData();
-    const path = formData.get('path') as string;
-    await enqueueNewItem(path);
-  },
-  add_existing: async (event) => {
-    const formData = await event.request.formData();
-    const path = formData.get('path') as string;
-    if (!path) {
-      return fail(400, {
-        error: 'No path provided',
-      });
-    }
-
-    const item = await loadNewItem(path);
-    if (item == null) {
-      return fail(404, {
-        error: 'File not found',
-      });
-    }
+    const url = formData.get('url') as string;
+    await create_via_url({
+      fetch: event.fetch,
+      payload: {
+        url,
+      },
+    });
   },
   reprocess: async (event) => {
     const formData = await event.request.formData();
     const id = formData.get('id') as string;
+    const stage = formData.get('stage') as string;
     if (!id) {
       return fail(400, {
         error: 'No id provided',
       });
     }
 
-    await reprocessItem(+id);
-  },
-  refresh: async (event) => {
-    const formData = await event.request.formData();
-    const id = formData.get('id') as string;
-    if (!id) {
-      return fail(400, {
-        error: 'No id provided',
-      });
-    }
-
-    const item = await reloadItem(+id);
-    if (!item) {
-      return fail(404, {
-        error: 'File not found',
-      });
-    }
-
-    return {};
+    await rerun_stage({
+      id,
+      stage,
+      fetch: event.fetch,
+    });
   },
   mark_read: async (event) => {
     const formData = await event.request.formData();
@@ -78,8 +49,13 @@ export const actions = {
       });
     }
 
-    const read = formData.get('new_read') === 'true';
-    await updateReadState(+id, read);
+    await mark_read({
+      id,
+      payload: {
+        read: formData.get('new_read') === 'true',
+      },
+      fetch: event.fetch,
+    });
   },
   delete: async (event) => {
     const formData = await event.request.formData();
@@ -90,7 +66,10 @@ export const actions = {
       });
     }
 
-    await deleteItem(+id);
+    await client({
+      url: `/api/video/${id}`,
+      method: 'DELETE',
+    });
 
     return {};
   },

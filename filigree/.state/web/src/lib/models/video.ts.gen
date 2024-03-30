@@ -235,15 +235,15 @@ export const VideoModel: ModelDefinition<typeof VideoSchema> = {
 };
 
 export interface CreateViaUrlArgs {
-  payload: CreateViaUrlInput;
+  payload: CreateViaUrlPayload;
   fetch?: typeof fetch;
 }
 
-export interface CreateViaUrlInput {
+export interface CreateViaUrlPayload {
   url: string;
 }
 
-export interface CreateViaUrlOutput {
+export interface CreateViaUrlResponse {
   id: VideoId;
 }
 
@@ -252,21 +252,20 @@ export async function create_via_url({ fetch, payload }: CreateViaUrlArgs) {
     url: `/api/add_video`,
     method: 'POST',
     fetch,
-
     json: payload,
-  }).json<CreateViaUrlOutput>();
+  }).json<CreateViaUrlResponse>();
 }
 
 export interface RerunStageArgs {
   id: string;
   stage: string;
-  payload: RerunStageInput;
+  payload: RerunStagePayload;
   fetch?: typeof fetch;
 }
 
-export interface RerunStageInput {}
+export interface RerunStagePayload {}
 
-export interface RerunStageOutput {
+export interface RerunStageResponse {
   job_id: string;
 }
 
@@ -275,29 +274,27 @@ export async function rerun_stage({ fetch, id, stage, payload }: RerunStageArgs)
     url: `/api/videos/${id}/rerun/${stage}`,
     method: 'POST',
     fetch,
-
     json: payload,
-  }).json<RerunStageOutput>();
+  }).json<RerunStageResponse>();
 }
 
 export interface MarkReadArgs {
   id: string;
-  payload: MarkReadInput;
+  payload: MarkReadPayload;
   fetch?: typeof fetch;
 }
 
-export interface MarkReadInput {
+export interface MarkReadPayload {
   read: boolean;
 }
 
-export interface MarkReadOutput {}
+export interface MarkReadResponse {}
 
 export async function mark_read({ fetch, id, payload }: MarkReadArgs) {
   return client({
     url: `/api/videos/${id}/mark_read`,
     method: 'POST',
     fetch,
-
     json: payload,
-  }).json<MarkReadOutput>();
+  }).json<MarkReadResponse>();
 }

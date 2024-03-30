@@ -3,3 +3,6 @@ _list:
 
 filigree:
   ../filigree/target/debug/filigree
+
+sync-types:
+  cd api && cargo run util sync-types

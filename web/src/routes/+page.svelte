@@ -48,7 +48,7 @@
   >
     <Label class="flex gap-2 flex-1 max-w-[100ch] text-base" for="path">Add new video</Label>
     <div class="flex gap-2">
-      <Input type="text" name="path" class="flex-1" autocomplete="off" />
+      <Input type="text" name="url" class="flex-1" autocomplete="off" />
       <Button type="submit">Add</Button>
     </div>
   </form>
@@ -86,7 +86,7 @@
         </p>
 
         <div class="flex ga-2">
-          <form method="POST" action="?/refresh" use:enhance>
+          <form method="POST" action="?/mark_read" use:enhance>
             <input type="hidden" name="id" value={item.id} />
             <input type="hidden" name="new_read" value={!read} />
             {#if ready}
@@ -113,27 +113,16 @@
               </Button>
             </DropdownMenu.Trigger>
             <DropdownMenu.Content>
-              {#if ready}
-                <DropdownMenu.Item>
-                  <form method="POST" action="?/refresh" use:enhance>
-                    <input type="hidden" name="id" value={item.id} />
-                    <button type="submit" class="flex items-center gap-2">
-                      <RefreshIcon class="h-4 w-4" />
-                      Reload from Disk
-                    </button>
-                  </form>
-                </DropdownMenu.Item>
-              {:else}
-                <DropdownMenu.Item>
-                  <form method="POST" action="?/reprocess" use:enhance>
-                    <input type="hidden" name="id" value={item.id} />
-                    <button type="submit" class="flex items-center gap-2">
-                      <RefreshIcon class="h-4 w-4" />
-                      Reprocess
-                    </button>
-                  </form>
-                </DropdownMenu.Item>
-              {/if}
+              <DropdownMenu.Item>
+                <form method="POST" action="?/reprocess" use:enhance>
+                  <input type="hidden" name="id" value={item.id} />
+                  <input type="hidden" name="stage" value="summarize" />
+                  <button type="submit" class="flex items-center gap-2">
+                    <RefreshIcon class="h-4 w-4" />
+                    Reprocess
+                  </button>
+                </form>
+              </DropdownMenu.Item>
 
               <DropdownMenu.Item>
                 <form method="POST" action="?/delete" use:enhance>
