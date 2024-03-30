@@ -95,6 +95,76 @@ async fn delete(
     Ok(StatusCode::OK)
 }
 
+#[derive(serde::Deserialize, serde::Serialize, Debug, JsonSchema)]
+pub struct CreateViaUrlInput {
+    pub url: String,
+}
+
+#[derive(serde::Deserialize, serde::Serialize, Debug, JsonSchema)]
+pub struct CreateViaUrlOutput {
+    pub id: VideoId,
+}
+
+async fn create_via_url(
+    State(state): State<ServerState>,
+    auth: Authed,
+    FormOrJson(payload): FormOrJson<CreateViaUrlInput>,
+) -> Result<impl IntoResponse, Error> {
+    // Add your code here
+
+    let output = CreateViaUrlOutput {
+        // add data here
+    };
+
+    Ok(Json(output))
+}
+
+#[derive(serde::Deserialize, serde::Serialize, Debug, JsonSchema)]
+pub struct RerunStageInput {}
+
+#[derive(serde::Deserialize, serde::Serialize, Debug, JsonSchema)]
+pub struct RerunStageOutput {
+    pub job_id: uuid::Uuid,
+}
+
+async fn rerun_stage(
+    State(state): State<ServerState>,
+    auth: Authed,
+    Path((id, stage)): Path<(VideoId, String)>,
+    FormOrJson(payload): FormOrJson<RerunStageInput>,
+) -> Result<impl IntoResponse, Error> {
+    // Add your code here
+
+    let output = RerunStageOutput {
+        // add data here
+    };
+
+    Ok(Json(output))
+}
+
+#[derive(serde::Deserialize, serde::Serialize, Debug, JsonSchema)]
+pub struct MarkReadInput {
+    pub read: bool,
+}
+
+#[derive(serde::Deserialize, serde::Serialize, Debug, JsonSchema)]
+pub struct MarkReadOutput {}
+
+async fn mark_read(
+    State(state): State<ServerState>,
+    auth: Authed,
+    Path(id): Path<VideoId>,
+    FormOrJson(payload): FormOrJson<MarkReadInput>,
+) -> Result<impl IntoResponse, Error> {
+    // Add your code here
+
+    let output = MarkReadOutput {
+        // add data here
+    };
+
+    Ok(Json(output))
+}
+
 pub fn create_routes() -> axum::Router<ServerState> {
     axum::Router::new()
         .route(
@@ -117,6 +187,24 @@ pub fn create_routes() -> axum::Router<ServerState> {
             "/videos/:id",
             routing::delete(delete)
                 .route_layer(has_any_permission(vec![CREATE_PERMISSION, "org_admin"])),
+        )
+        .route(
+            "/add_video",
+            routing::post(create_via_url)
+                .route_layer(has_any_permission(vec![CREATE_PERMISSION, "org_admin"])),
+        )
+        .route(
+            "/videos/:id/rerun/:stage",
+            routing::post(rerun_stage)
+                .route_layer(has_any_permission(vec![OWNER_PERMISSION, "org_admin"])),
+        )
+        .route(
+            "/videos/:id/mark_read",
+            routing::post(mark_read).route_layer(has_any_permission(vec![
+                WRITE_PERMISSION,
+                OWNER_PERMISSION,
+                "org_admin",
+            ])),
         )
 }
 

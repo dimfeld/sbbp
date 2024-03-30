@@ -4,6 +4,8 @@ import { ObjectPermission } from '../model_types.js';
 import type { VideoProcessingState } from '../api_types.js';
 import type { VideoTranscript } from '../transcript.js';
 
+export type VideoId = string;
+
 export const VideoSchema = z.object({
   id: z.string(),
   organization_id: z.string(),
@@ -233,3 +235,71 @@ export const VideoModel: ModelDefinition<typeof VideoSchema> = {
     },
   ],
 };
+
+export interface CreateViaUrlArgs {
+  payload: CreateViaUrlInput;
+  fetch?: typeof fetch;
+}
+
+export interface CreateViaUrlInput {
+  url: string;
+}
+
+export interface CreateViaUrlOutput {
+  id: VideoId;
+}
+
+export async function create_via_url({ fetch, payload }: CreateViaUrlArgs) {
+  return client({
+    url: `/api/add_video`,
+    method: 'POST',
+    fetch,
+
+    json: payload,
+  }).json<CreateViaUrlOutput>();
+}
+
+export interface RerunStageArgs {
+  id: string;
+  stage: string;
+  payload: RerunStageInput;
+  fetch?: typeof fetch;
+}
+
+export interface RerunStageInput {}
+
+export interface RerunStageOutput {
+  job_id: string;
+}
+
+export async function rerun_stage({ fetch, id, stage, payload }: RerunStageArgs) {
+  return client({
+    url: `/api/videos/${id}/rerun/${stage}`,
+    method: 'POST',
+    fetch,
+
+    json: payload,
+  }).json<RerunStageOutput>();
+}
+
+export interface MarkReadArgs {
+  id: string;
+  payload: MarkReadInput;
+  fetch?: typeof fetch;
+}
+
+export interface MarkReadInput {
+  read: boolean;
+}
+
+export interface MarkReadOutput {}
+
+export async function mark_read({ fetch, id, payload }: MarkReadArgs) {
+  return client({
+    url: `/api/videos/${id}/mark_read`,
+    method: 'POST',
+    fetch,
+
+    json: payload,
+  }).json<MarkReadOutput>();
+}

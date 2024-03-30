@@ -2,6 +2,8 @@ import { client, type ModelDefinition } from 'filigree-web';
 import { z } from 'zod';
 import { ObjectPermission } from '../model_types.js';
 
+export type OrganizationId = string;
+
 export const OrganizationSchema = z.object({
   id: z.string(),
   updated_at: z.string().datetime(),

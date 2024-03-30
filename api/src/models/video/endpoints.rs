@@ -9,7 +9,7 @@ use axum::{
 };
 use axum_extra::extract::Query;
 use axum_jsonschema::Json;
-use error_stack::ResultExt;
+use error_stack::{Report, ResultExt};
 use filigree::{
     auth::{AuthError, ObjectPermission},
     extract::FormOrJson,
@@ -18,6 +18,7 @@ use schemars::JsonSchema;
 use serde::Deserialize;
 use serde_json::json;
 use tracing::{event, Level};
+use ts_rs::TS;
 use url::Url;
 
 use super::{
@@ -103,15 +104,20 @@ async fn delete(
     Ok(StatusCode::OK)
 }
 
-#[derive(Deserialize, Debug, JsonSchema)]
-struct CreateViaUrlPayload {
-    url: Url,
+#[derive(serde::Deserialize, serde::Serialize, Debug, JsonSchema)]
+pub struct CreateViaUrlInput {
+    pub url: String,
+}
+
+#[derive(serde::Deserialize, serde::Serialize, Debug, JsonSchema)]
+pub struct CreateViaUrlOutput {
+    pub id: VideoId,
 }
 
 async fn create_via_url(
     State(state): State<ServerState>,
     auth: Authed,
-    FormOrJson(payload): FormOrJson<CreateViaUrlPayload>,
+    FormOrJson(payload): FormOrJson<CreateViaUrlInput>,
 ) -> Result<impl IntoResponse, Error> {
     let id = VideoId::new();
     sqlx::query!(
@@ -139,13 +145,24 @@ async fn create_via_url(
     .change_context(Error::TaskQueue)
     .attach_printable("Failed to enqueue download job")?;
 
-    Ok(())
+    let output = CreateViaUrlOutput { id };
+
+    Ok(Json(output))
+}
+
+#[derive(serde::Deserialize, serde::Serialize, Debug, JsonSchema)]
+pub struct RerunStageInput {}
+
+#[derive(serde::Deserialize, serde::Serialize, Debug, JsonSchema)]
+pub struct RerunStageOutput {
+    pub job_id: uuid::Uuid,
 }
 
 async fn rerun_stage(
     State(state): State<ServerState>,
     auth: Authed,
     Path((id, stage)): Path<(VideoId, String)>,
+    FormOrJson(payload): FormOrJson<RerunStageInput>,
 ) -> Result<impl IntoResponse, Error> {
     let video = queries::get(&state.db, &auth, id).await?;
     let storage_prefix = video.id.to_string();
@@ -219,16 +236,44 @@ async fn rerun_stage(
 
     let job_id = result.change_context(Error::TaskQueue)?;
 
-    Ok(Json(json!({ "job_id": job_id })))
+    let output = RerunStageOutput { job_id };
+
+    Ok(Json(output))
+}
+
+#[derive(serde::Deserialize, serde::Serialize, Debug, JsonSchema)]
+pub struct MarkReadInput {
+    pub read: bool,
+}
+
+#[derive(serde::Deserialize, serde::Serialize, Debug, JsonSchema)]
+pub struct MarkReadOutput {}
+
+async fn mark_read(
+    State(state): State<ServerState>,
+    auth: Authed,
+    Path(id): Path<VideoId>,
+    FormOrJson(payload): FormOrJson<MarkReadInput>,
+) -> Result<impl IntoResponse, Error> {
+    sqlx::query!(
+        "UPDATE videos
+        SET read = $3
+        WHERE id = $1 AND organization_id = $2",
+        id.as_uuid(),
+        auth.organization_id.as_uuid(),
+        payload.read
+    )
+    .execute(&state.db)
+    .await
+    .change_context(Error::Db)?;
+
+    let output = MarkReadOutput {};
+
+    Ok(Json(output))
 }
 
 pub fn create_routes() -> axum::Router<ServerState> {
     axum::Router::new()
-        .route(
-            "/add_video",
-            routing::post(create_via_url)
-                .route_layer(has_any_permission(vec![OWNER_PERMISSION, "org_admin"])),
-        )
         .route(
             "/videos",
             routing::get(list).route_layer(has_any_permission(vec![READ_PERMISSION, "org_admin"])),
@@ -251,9 +296,22 @@ pub fn create_routes() -> axum::Router<ServerState> {
                 .route_layer(has_any_permission(vec![CREATE_PERMISSION, "org_admin"])),
         )
         .route(
+            "/add_video",
+            routing::post(create_via_url)
+                .route_layer(has_any_permission(vec![CREATE_PERMISSION, "org_admin"])),
+        )
+        .route(
             "/videos/:id/rerun/:stage",
             routing::post(rerun_stage)
                 .route_layer(has_any_permission(vec![OWNER_PERMISSION, "org_admin"])),
+        )
+        .route(
+            "/videos/:id/mark_read",
+            routing::post(mark_read).route_layer(has_any_permission(vec![
+                WRITE_PERMISSION,
+                OWNER_PERMISSION,
+                "org_admin",
+            ])),
         )
 }
 

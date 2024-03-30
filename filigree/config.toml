@@ -6,11 +6,6 @@ default_auth_scope = "model"
 api_dir = "api"
 web_dir = "web"
 
-
-shared_types = [
-  "crate::models::video::VideoProcessingState",
-]
-
 [secrets]
 deepgram = "DEEPGRAM_API_KEY"
 anthropic = "ANTHROPIC_API_KEY"

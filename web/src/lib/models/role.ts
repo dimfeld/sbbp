@@ -2,6 +2,8 @@ import { client, type ModelDefinition } from 'filigree-web';
 import { z } from 'zod';
 import { ObjectPermission } from '../model_types.js';
 
+export type RoleId = string;
+
 export const RoleSchema = z.object({
   id: z.string(),
   organization_id: z.string(),

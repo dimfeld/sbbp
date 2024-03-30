@@ -1,6 +1,10 @@
 name = "Video"
-endpoints = { create = false, update = true, get = true, list = true, delete = true }
 allow_id_in_create = true
+standard_endpoints = { create = false, update = true, get = true, list = true, delete = true }
+
+shared_types = [
+  "VideoProcessingState",
+]
 
 [[fields]]
 name = "processing_state"
@@ -101,3 +105,24 @@ nullable = true
 owner_access = "read"
 user_access = "read"
 
+[[endpoints]]
+name = "create_via_url"
+path = "add_video"
+method = "post"
+input.url = "string"
+output.id = "VideoId"
+permission = "create"
+
+[[endpoints]]
+name = "rerun_stage"
+path = "videos/:id/rerun/:stage"
+method = "post"
+output.job_id = "Uuid"
+permission = "owner"
+
+[[endpoints]]
+name = "mark_read"
+path = "videos/:id/mark_read"
+method = "post"
+input.read = "boolean"
+permission = "write"
