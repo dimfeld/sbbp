@@ -2,4 +2,6 @@ node_modules
 .DS_Store
 processed
 __pycache__
+storage
+queue.db
 .env
