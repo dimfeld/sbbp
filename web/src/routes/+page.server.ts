@@ -2,17 +2,6 @@ import { create_via_url, mark_read, rerun_stage, type VideoListResult } from '$l
 import { type Actions, fail } from '@sveltejs/kit';
 import { client } from 'filigree-web';
 
-export async function load({ depends }) {
-  depends('resource://items');
-  const items = await client({
-    url: '/api/videos',
-  }).json<VideoListResult>();
-
-  return {
-    items,
-  };
-}
-
 export const actions = {
   download: async (event) => {
     const formData = await event.request.formData();

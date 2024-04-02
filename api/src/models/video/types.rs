@@ -5,7 +5,6 @@ use serde::{
     Deserialize, Serialize,
 };
 use sqlx_transparent_json_decode::sqlx_json_decode;
-use ts_rs::TS;
 
 use super::VideoId;
 use crate::models::organization::OrganizationId;
@@ -19,7 +18,6 @@ use crate::models::organization::OrganizationId;
     Clone,
     PartialEq,
     Eq,
-    TS,
     schemars::JsonSchema,
     sqlx::Type,
 )]
@@ -34,9 +32,7 @@ pub enum VideoProcessingState {
     Ready,
 }
 
-#[derive(
-    Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq, TS, schemars::JsonSchema,
-)]
+#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq, schemars::JsonSchema)]
 pub struct VideoImages {
     pub max_index: usize,
     pub interval: usize,

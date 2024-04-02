@@ -18,7 +18,6 @@ use schemars::JsonSchema;
 use serde::Deserialize;
 use serde_json::json;
 use tracing::{event, Level};
-use ts_rs::TS;
 use url::Url;
 
 use super::{
@@ -272,6 +271,26 @@ async fn mark_read(
     Ok(Json(output))
 }
 
+#[derive(serde::Deserialize, serde::Serialize, Debug, JsonSchema)]
+pub struct GetImagePayload {}
+
+#[derive(serde::Deserialize, serde::Serialize, Debug, JsonSchema)]
+pub struct GetImageResponse {}
+
+async fn get_image(
+    State(state): State<ServerState>,
+    auth: Authed,
+    Path((id, image_id)): Path<(VideoId, String)>,
+) -> Result<impl IntoResponse, Error> {
+    // Add your code here
+
+    let output = GetImageResponse {
+        // add data here
+    };
+
+    Ok(Json(output))
+}
+
 pub fn create_routes() -> axum::Router<ServerState> {
     axum::Router::new()
         .route(
@@ -308,6 +327,15 @@ pub fn create_routes() -> axum::Router<ServerState> {
         .route(
             "/videos/:id/mark_read",
             routing::post(mark_read).route_layer(has_any_permission(vec![
+                WRITE_PERMISSION,
+                OWNER_PERMISSION,
+                "org_admin",
+            ])),
+        )
+        .route(
+            "/videos/:id/image/:image_id",
+            routing::get(get_image).route_layer(has_any_permission(vec![
+                READ_PERMISSION,
                 WRITE_PERMISSION,
                 OWNER_PERMISSION,
                 "org_admin",

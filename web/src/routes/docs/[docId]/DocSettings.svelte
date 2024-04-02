@@ -1,6 +1,6 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
-  import { Button } from '$lib/components/ui/button';
+  import { Button } from 'svelte-ux';
 
   export let read: boolean;
 </script>
@@ -12,5 +12,5 @@
       Mark {read ? 'Unread' : 'Read'}
     </Button>
   </form>
-  <a href="/"><Button variant="outline">Back to Index</Button></a>
+  <Button href="/" variant="outline">Back to Index</Button>
 </div>

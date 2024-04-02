@@ -5,7 +5,7 @@ export async function GET({ params }) {
   const { docId, imageIndex } = params;
   const image = loadImage(+docId, +imageIndex);
   if (!image) {
-    throw error(404, { message: 'not found' });
+    error(404, { message: 'not found' });
   }
 
   const res = new Response(image);

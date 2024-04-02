@@ -51,7 +51,7 @@
   {/if}
 
   {#if data.logInSuccess}
-    <p>You have been logged in. Redirecting to the app...</p>
+    <p>You have been logged in. Sending you to back to the app in 3 seconds...</p>
   {:else}
     <form
       class="flex flex-col gap-4"

@@ -58,7 +58,6 @@ pub enum Error {
     /// An invalid Host header was passed
     #[error("Invalid host")]
     InvalidHostHeader,
-
     #[error("Type Export Error")]
     TypeExport,
 }

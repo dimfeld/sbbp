@@ -1,24 +1,20 @@
 <script lang="ts">
   import { browser } from '$app/environment';
   import { enhance } from '$app/forms';
-  import { Button } from '$lib/components/ui/button';
-  import { Input } from '$lib/components/ui/input';
-  import { Label } from '$lib/components/ui/label';
-  import { Switch } from '$lib/components/ui/switch';
-  import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
+  import { Button, Icon, Menu, MenuItem, Switch, TextField, Toggle } from 'svelte-ux';
   import {
-    XIcon as DeleteIcon,
-    RefreshCcwIcon as RefreshIcon,
-    SettingsIcon,
-    MailOpenIcon as ReadIcon,
-    MailIcon as UnreadIcon,
-  } from 'lucide-svelte';
+    mdiFileDocumentRemove as deleteIcon,
+    mdiRefresh as refreshIcon,
+    mdiCog as settingsIcon,
+    mdiEmailOutline as unreadIcon,
+    mdiEmailOpenOutline as readIcon,
+  } from '@mdi/js';
   import { formatDuration } from '$lib/format.js';
   import { invalidate } from '$app/navigation';
 
   const { data, form } = $props();
 
-  let unreadOnly = true;
+  let unreadOnly = $state(true);
 
   let timer: number | null = null;
   $effect(() => {
@@ -46,9 +42,9 @@
     use:enhance
     class="flex flex-col gap-2 rounded-lg border border-border p-4"
   >
-    <Label class="flex gap-2 flex-1 max-w-[100ch] text-base" for="path">Add new video</Label>
+    <label class="flex gap-2 flex-1 max-w-[100ch] text-base" for="path">Add new video</label>
     <div class="flex gap-2">
-      <Input type="text" name="url" class="flex-1" autocomplete="off" />
+      <TextField name="url" class="flex-1" autocomplete="off" />
       <Button type="submit">Add</Button>
     </div>
   </form>
@@ -60,7 +56,7 @@
   <div class="flex justify-end gap-2">
     <div class="flex items-center gap-2">
       <Switch id="unread-only" bind:checked={unreadOnly} />
-      <Label for="unread-only">Unread only</Label>
+      <label for="unread-only">Unread only</label>
     </div>
   </div>
 
@@ -92,48 +88,41 @@
             {#if ready}
               <Button
                 variant="outline"
-                size="icon"
+                icon={read ? readIcon : unreadIcon}
                 type="submit"
                 formaction="?/mark_read"
                 aria-label="Mark {read ? 'Unread' : 'Read'}"
-              >
-                {#if read}
-                  <ReadIcon />
-                {:else}
-                  <UnreadIcon />
-                {/if}
-              </Button>
+              />
             {/if}
           </form>
 
-          <DropdownMenu.Root>
-            <DropdownMenu.Trigger aria-label="Settings" asChild let:builder>
-              <Button variant="outline" size="icon" builders={[builder]}>
-                <SettingsIcon />
-              </Button>
-            </DropdownMenu.Trigger>
-            <DropdownMenu.Content>
-              <DropdownMenu.Item>
-                <form method="POST" action="?/reprocess" use:enhance>
-                  <input type="hidden" name="id" value={item.id} />
-                  <input type="hidden" name="stage" value="summarize" />
-                  <button type="submit" class="flex items-center gap-2">
-                    <RefreshIcon class="h-4 w-4" />
-                    Reprocess
-                  </button>
-                </form>
-              </DropdownMenu.Item>
+          <Toggle let:on={open} let:toggle>
+            <Button on:click={toggle}>
+              <Icon data={settingsIcon} />
 
-              <DropdownMenu.Item>
-                <form method="POST" action="?/delete" use:enhance>
-                  <input type="hidden" name="id" value={item.id} />
-                  <button type="submit" class="flex items-center gap-2">
-                    <DeleteIcon class="w-4 h-4" /> Delete
-                  </button>
-                </form>
-              </DropdownMenu.Item>
-            </DropdownMenu.Content>
-          </DropdownMenu.Root>
+              <Menu {open} on:close={toggle}>
+                <MenuItem>
+                  <form method="POST" action="?/reprocess" use:enhance>
+                    <input type="hidden" name="id" value={item.id} />
+                    <input type="hidden" name="stage" value="summarize" />
+                    <button type="submit" class="flex items-center gap-2">
+                      <Icon data={refreshIcon} />
+                      Reprocess
+                    </button>
+                  </form>
+                </MenuItem>
+
+                <MenuItem>
+                  <form method="POST" action="?/delete" use:enhance>
+                    <input type="hidden" name="id" value={item.id} />
+                    <button type="submit" class="flex items-center gap-2">
+                      <Icon data={deleteIcon} /> Delete
+                    </button>
+                  </form>
+                </MenuItem>
+              </Menu>
+            </Button>
+          </Toggle>
         </div>
       </li>
     {/each}
@@ -145,9 +134,9 @@
     use:enhance
     class="flex flex-col gap-2 rounded-lg border border-border p-4"
   >
-    <Label class="flex gap-2 flex-1 max-w-[100ch] text-base" for="path">Add existing path</Label>
+    <label class="flex gap-2 flex-1 max-w-[100ch] text-base" for="path">Add existing path</label>
     <div class="flex gap-2">
-      <Input type="text" name="path" class="flex-1" autocomplete="off" />
+      <TextField name="path" class="flex-1" autocomplete="off" />
       <Button type="submit">Add</Button>
     </div>
   </form>

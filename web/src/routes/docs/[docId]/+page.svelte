@@ -1,7 +1,6 @@
 <script lang="ts">
   import { page } from '$app/stores';
   import { align } from '$lib/align';
-  import { Button } from '$lib/components/ui/button';
   import DocSettings from './DocSettings.svelte';
 
   const { data } = $props();

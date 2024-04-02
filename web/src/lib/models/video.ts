@@ -1,7 +1,7 @@
 import { client, type ModelDefinition } from 'filigree-web';
 import { z } from 'zod';
 import { ObjectPermission } from '../model_types.js';
-import type { VideoProcessingState } from '../api_types.js';
+import { VideoProcessingState } from '../api_types.js';
 import type { VideoTranscript } from '../transcript.js';
 
 export type VideoId = string;
@@ -11,7 +11,7 @@ export const VideoSchema = z.object({
   organization_id: z.string(),
   updated_at: z.string().datetime(),
   created_at: z.string().datetime(),
-  processing_state: z.custom<VideoProcessingState>(),
+  processing_state: z.lazy(VideoProcessingState),
   url: z.string().optional(),
   title: z.string().optional(),
   duration: z.number().int().optional(),
@@ -53,7 +53,7 @@ export const VideoListResultAndPopulatedListResultSchema = z.object({
   organization_id: z.string(),
   updated_at: z.string().datetime(),
   created_at: z.string().datetime(),
-  processing_state: z.custom<VideoProcessingState>(),
+  processing_state: z.lazy(VideoProcessingState),
   url: z.string().optional(),
   title: z.string().optional(),
   duration: z.number().int().optional(),
@@ -299,4 +299,22 @@ export async function mark_read({ fetch, id, payload }: MarkReadArgs) {
     fetch,
     json: payload,
   }).json<MarkReadResponse>();
+}
+
+export interface GetImageArgs {
+  id: string;
+  image_id: string;
+  fetch?: typeof fetch;
+}
+
+export interface GetImagePayload {}
+
+export interface GetImageResponse {}
+
+export async function get_image({ fetch, id, image_id }: GetImageArgs) {
+  return client({
+    url: `/api/videos/${id}/image/${image_id}`,
+    method: 'GET',
+    fetch,
+  }).json<GetImageResponse>();
 }

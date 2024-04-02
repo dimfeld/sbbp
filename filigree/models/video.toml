@@ -10,7 +10,7 @@ shared_types = [
 name = "processing_state"
 type = "text"
 rust_type = "crate::models::video::VideoProcessingState"
-zod_type = "z.custom<VideoProcessingState>()"
+zod_type = "z.lazy(VideoProcessingState)"
 owner_access = "read"
 user_access = "read"
 
@@ -126,3 +126,10 @@ path = "videos/:id/mark_read"
 method = "post"
 input.read = "boolean"
 permission = "write"
+
+[[endpoints]]
+name = "get_image"
+path = "videos/:id/image/:image_id"
+method = "get"
+permission = "read"
+
