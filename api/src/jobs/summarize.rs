@@ -59,7 +59,7 @@ async fn run(job: RunningJob, state: ServerState) -> Result<(), error_stack::Rep
         .http_client
         .post("https://api.anthropic.com/v1/messages")
         .header("x-api-key", &state.secrets.anthropic)
-        .header("x-anthropic-version", "2023-06-01")
+        .header("anthropic-version", "2023-06-01")
         .json(&summary_request)
         .send()
         .await

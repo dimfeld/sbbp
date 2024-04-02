@@ -60,6 +60,8 @@ pub struct ServerStateInner {
     pub queue: effectum::Queue,
     /// Object storage providers
     pub storage: storage::AppStorage,
+
+    pub ssim_threshold: f64,
 }
 
 impl ServerStateInner {
@@ -314,6 +316,10 @@ pub async fn create_server(config: Config) -> Result<Server, Report<Error>> {
         secrets: config.secrets,
         queue,
         storage: storage::AppStorage::new(config.storage).change_context(Error::ServerStart)?,
+        ssim_threshold: std::env::var("SSIM_THRESHOLD")
+            .ok()
+            .and_then(|v| v.parse::<f64>().ok())
+            .unwrap_or(0.9),
     }));
 
     let queue_workers = crate::jobs::init(&state, config.init_recurring_jobs)

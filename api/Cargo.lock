@@ -2281,6 +2281,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "libwebp-sys"
+version = "0.9.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "829b6b604f31ed6d2bccbac841fe0788de93dbd87e4eb1ba2c4adfe8c012a838"
+dependencies = [
+ "cc",
+ "glob",
+]
+
+[[package]]
 name = "linux-raw-sys"
 version = "0.4.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3749,6 +3759,7 @@ dependencies = [
  "tracing-subscriber",
  "url",
  "uuid",
+ "webp",
 ]
 
 [[package]]
@@ -5357,6 +5368,16 @@ checksum = "aa30049b1c872b72c89866d458eae9f20380ab280ffd1b1e18df2d3e2d98cfe0"
 dependencies = [
  "js-sys",
  "wasm-bindgen",
+]
+
+[[package]]
+name = "webp"
+version = "0.2.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9e03e4341d1b5381a50737fa39ef1c98272a9f2d92d3a9f8ab249cc2370c0827"
+dependencies = [
+ "image",
+ "libwebp-sys",
 ]
 
 [[package]]

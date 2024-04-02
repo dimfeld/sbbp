@@ -55,6 +55,9 @@ enum JobError {
     NoTranscript,
     #[error("Failed calling summarize API")]
     Summarizing,
+    /// Error encoding webp
+    #[error("{0}")]
+    WebPEncoder(String),
 }
 
 pub struct QueueWorkers {

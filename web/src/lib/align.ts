@@ -1,15 +1,40 @@
-import type { TranscriptChunk, Video, ViewerChunk } from './types';
+import type { ViewerChunk } from './types';
+import type { Video } from '$lib/models/video';
 
-export function align(config: Video, inputText: TranscriptChunk[]) {
-  const {
-    images: { interval: imageInterval, maxIndex: maxImageIndex },
-  } = config;
+export function align(video: Video) {
+  if (!video.images || !video.transcript) {
+    return [];
+  }
+
+  const { interval: imageInterval, max_index: maxImageIndex } = video.images;
+
+  const transcript = video.transcript;
 
   const numImages = maxImageIndex + 1;
 
   const imageTimestamp = (index: number) => {
     return index * imageInterval;
   };
+
+  const output = transcript.results.channels[0].alternatives[0].paragraphs?.paragraphs.map((p) => {
+    let text = p.sentences.map((s) => s.text).join(' ');
+    let chunk: ViewerChunk = {
+      text,
+      timestamp: [p.start, p.end],
+      images: [
+        Math.max(1, Math.min(Math.ceil(p.start / imageInterval), numImages - 1)),
+        Math.max(1, Math.min(Math.floor(p.end / imageInterval), numImages - 1)),
+      ],
+    };
+
+    return chunk;
+  });
+
+  return output ?? [];
+  /*
+  if (!output) {
+    return [];
+  }
 
   let firstTextTimestamp = inputText[0].timestamp[0];
   let output: ViewerChunk[] = [
@@ -22,9 +47,7 @@ export function align(config: Video, inputText: TranscriptChunk[]) {
 
   let textIndex = 0;
   while (textIndex < inputText.length) {
-    const {
-      timestamp: [textStart],
-    } = inputText[textIndex];
+    const { start: textStart } = inputText[textIndex];
 
     const currentChunk = output[output.length - 1];
     const chunkBoundary = currentChunk.timestamp[0] + imageInterval;
@@ -52,10 +75,7 @@ export function align(config: Video, inputText: TranscriptChunk[]) {
       }
       currentChunk.text += inputText[textIndex].text;
 
-      currentChunk.timestamp[1] = Math.max(
-        inputText[textIndex].timestamp[1],
-        currentChunk.timestamp[1]
-      );
+      currentChunk.timestamp[1] = Math.max(inputText[textIndex].end, currentChunk.timestamp[1]);
 
       textIndex++;
     }
@@ -72,4 +92,5 @@ export function align(config: Video, inputText: TranscriptChunk[]) {
   }
 
   return output;
+  */
 }

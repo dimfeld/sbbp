@@ -13,6 +13,7 @@ use error_stack::{Report, ResultExt};
 use filigree::{
     auth::{AuthError, ObjectPermission},
     extract::FormOrJson,
+    storage::StorageError,
 };
 use schemars::JsonSchema;
 use serde::Deserialize;
@@ -21,8 +22,8 @@ use tracing::{event, Level};
 use url::Url;
 
 use super::{
-    queries, types::*, VideoId, CREATE_PERMISSION, OWNER_PERMISSION, READ_PERMISSION,
-    WRITE_PERMISSION,
+    image_filename, queries, types::*, VideoId, CREATE_PERMISSION, OWNER_PERMISSION,
+    READ_PERMISSION, WRITE_PERMISSION,
 };
 use crate::{
     auth::{has_any_permission, Authed},
@@ -280,15 +281,19 @@ pub struct GetImageResponse {}
 async fn get_image(
     State(state): State<ServerState>,
     auth: Authed,
-    Path((id, image_id)): Path<(VideoId, String)>,
+    Path((id, image_id)): Path<(VideoId, usize)>,
 ) -> Result<impl IntoResponse, Error> {
     // Add your code here
 
-    let output = GetImageResponse {
-        // add data here
-    };
+    let storage_path = format!("{}/{}", id, image_filename(image_id, None));
+    let response = state
+        .storage
+        .images
+        .stream_to_client(&storage_path)
+        .await
+        .change_context(Error::Storage)?;
 
-    Ok(Json(output))
+    Ok(response)
 }
 
 pub fn create_routes() -> axum::Router<ServerState> {

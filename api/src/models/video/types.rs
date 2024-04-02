@@ -36,6 +36,9 @@ pub enum VideoProcessingState {
 pub struct VideoImages {
     pub max_index: usize,
     pub interval: usize,
+    #[serde(default)]
+    pub thumbnail_widths: Vec<u32>,
+    #[serde(default)]
     pub removed: Vec<u32>,
 }
 

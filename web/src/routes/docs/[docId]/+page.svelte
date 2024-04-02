@@ -8,7 +8,7 @@
   let showRemoved = $state(false);
 
   let removed = $derived(new Set(data.item.images.removed));
-  let aligned = $derived(align(data.item, data.text));
+  let aligned = $derived(align(data.item));
 
   function imageRange([start, end]: number[], showRemoved: boolean) {
     if (start == end) {
@@ -29,19 +29,34 @@
   }
 
   let largeImage: number | null = $state(null);
+
+  function onkeydown(event: KeyboardEvent) {
+    if (!largeImage) {
+      return;
+    }
+    if (event.key === 'Escape') {
+      largeImage = null;
+    } else if (event.key === 'ArrowLeft') {
+      largeImage = Math.max(1, largeImage - 1);
+    } else if (event.key === 'ArrowRight') {
+      largeImage = Math.min(data.item.images.max_index, largeImage + 1);
+    }
+  }
 </script>
 
-<label class="fixed right-2 top-2 z-10">
-  <input type="checkbox" bind:checked={showRemoved} />
-  Show removed images
-</label>
+<svelte:window {onkeydown} />
 
-<main class="relative p-4 mx-auto flex flex-col items-center">
+<main class="relative p-4 w-full overflow-y-auto flex flex-col items-center">
+  <label class="sticky w-full top-0 left-2 z-10">
+    <input type="checkbox" bind:checked={showRemoved} />
+    Show removed images
+  </label>
+
   <header
     class="flex items-start md:items-center justify-start md:justify-between gap-4 w-full flex-col md:flex-row"
   >
     <h1 class="text-3xl">{data.item.title}</h1>
-    <DocSettings read={data.item.viewerData.read} />
+    <DocSettings read={data.item.read} />
   </header>
 
   {#if data.item.summary}
@@ -62,8 +77,9 @@
         {#each imageRange(chunk.images, showRemoved) as image}
           <button type="button" on:click={() => (largeImage = image)}>
             <img
-              class="object-cover"
-              src="/docs/{$page.params.docId}/image/{image}"
+              class="object-cover aspect-video border"
+              class:border-red-500={removed.has(image)}
+              src="/api/videos/{$page.params.docId}/image/{image}"
               alt="Image {image}"
               loading="lazy"
             />
@@ -74,12 +90,12 @@
   </div>
 
   <div class="flex self-start mt-8">
-    <DocSettings read={data.item.viewerData.read} />
+    <DocSettings read={data.item.read} />
   </div>
 </main>
 
 {#if largeImage}
   <button class="fixed inset-0 z-50" on:click={() => (largeImage = null)}>
-    <img src="/docs/{$page.params.docId}/image/{largeImage}" alt="Image {largeImage}" />
+    <img src="/api/videos/{$page.params.docId}/image/{largeImage}" alt="Image {largeImage}" />
   </button>
 {/if}

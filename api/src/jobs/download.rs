@@ -122,8 +122,8 @@ async fn run(job: RunningJob, state: ServerState) -> Result<(), error_stack::Rep
         title=$3,
         duration=$4,
         author=$5,
-        processed_path=$7,
-        metadata=metadata || $8
+        processed_path=$6,
+        metadata=metadata || $7
         WHERE id=$1
         ",
         payload.id.as_uuid(),

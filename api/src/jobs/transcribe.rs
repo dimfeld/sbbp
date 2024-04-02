@@ -102,6 +102,7 @@ async fn send_request(
         )
         .header("Content-Type", "audio/mpeg")
         .query(&[
+            ("model", "nova-2"),
             ("paragraphs", "true"),
             ("punctuate", "true"),
             ("utterances", "true"),

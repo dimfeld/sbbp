@@ -1,7 +1,7 @@
 //! analyze background job
 #![allow(unused_imports, unused_variables, dead_code)]
 
-use std::path::Path;
+use std::{io::Write, path::Path};
 
 use bytes::Bytes;
 use effectum::{JobBuilder, JobRunner, Queue, RecurringJobSchedule, RunningJob};
@@ -29,6 +29,8 @@ pub struct AnalyzeJobPayload {
     pub storage_prefix: String,
     pub max_index: usize,
 }
+
+const THUMBNAIL_SIZES: &[u32] = &[720, 1280, 1920];
 
 /// Compare image similarity to see which ones we can remove
 async fn run(job: RunningJob, state: ServerState) -> Result<(), error_stack::Report<JobError>> {
@@ -59,18 +61,31 @@ async fn run(job: RunningJob, state: ServerState) -> Result<(), error_stack::Rep
 
     // Read the images and do structural similarity comparison on them
     let (removed, _) = try_join(
-        ssim_pipeline(&payload, dir),
+        ssim_pipeline(&payload, state.ssim_threshold, dir),
         thumbnail_pipeline(&state, &payload, dir),
     )
     .await?;
 
-    // TODO update database
+    sqlx::query!(
+        "UPDATE videos
+        SET images = images || $2
+        WHERE id=$1",
+        payload.id.as_uuid(),
+        json!({
+            "thumbnail_widths": THUMBNAIL_SIZES,
+            "removed": removed,
+        })
+    )
+    .execute(&state.db)
+    .await
+    .change_context(JobError::Db)?;
 
     Ok(())
 }
 
 async fn ssim_pipeline(
     payload: &AnalyzeJobPayload,
+    threshold: f64,
     dir: &Path,
 ) -> Result<Vec<u32>, error_stack::Report<JobError>> {
     let mut removed = Vec::new();
@@ -90,7 +105,7 @@ async fn ssim_pipeline(
 
         let ssim = image_compare::rgb_hybrid_compare(&last_image, &this_image)
             .change_context(JobError::CalculatingSimilarity)?;
-        if ssim.score >= 0.90 {
+        if ssim.score >= threshold {
             // If this image is too similar to the previous kept image, then remove it.
             removed.push(i as u32);
         } else {
@@ -141,27 +156,26 @@ async fn generate_thumbnails(
     index: usize,
 ) -> Result<Vec<(String, Vec<u8>)>, error_stack::Report<JobError>> {
     tokio::task::spawn_blocking(move || {
-        let sizes = [480, 720, 1080];
-        sizes
+        THUMBNAIL_SIZES
             .iter()
             .filter(|&size| image.width() > *size)
             .map(|&size| {
-                let thumbnail =
-                    image.resize_to_fill(size, size, image::imageops::FilterType::Lanczos3);
-                let mut output = std::io::Cursor::new(Vec::new());
+                let thumbnail = image.resize(size, size, image::imageops::FilterType::Lanczos3);
 
-                thumbnail
-                    .write_to(&mut output, image::ImageFormat::WebP)
+                let encoded = webp::Encoder::from_image(&thumbnail)
+                    .map_err(|msg| JobError::WebPEncoder(msg.to_string()))
                     .change_context(JobError::Thumbnail)
                     .attach_printable_lazy(|| {
                         format!(
                             "input file {}, thumbnail size: {size}",
                             image_filename(index, None)
                         )
-                    })?;
+                    })?
+                    .encode(70.0);
 
+                let output = Vec::from(&*encoded);
                 let filename = image_filename(index, Some(size as usize));
-                Ok::<_, Report<JobError>>((filename, output.into_inner()))
+                Ok::<_, Report<JobError>>((filename, output))
             })
             .collect::<Result<Vec<_>, _>>()
     })

@@ -173,6 +173,7 @@ async fn extract_images(
             // ffmpeg numbers from 1
             max_index: num_files,
             interval,
+            thumbnail_widths: Vec::new(),
             removed: Vec::new(),
         },
     ))
