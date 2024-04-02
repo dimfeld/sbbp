@@ -1,16 +1,10 @@
 import { getUser } from '$lib/server/user.js';
-import { type Handle, error, redirect } from '@sveltejs/kit';
+import { type Handle, error, redirect, type HandleFetch } from '@sveltejs/kit';
 import { hasPermissions, protectRoutes } from 'filigree-web/auth/routes';
 import { sequence } from '@sveltejs/kit/hooks';
 
 const protect = protectRoutes({
-  allowUnauthed: [
-    // API does its own auth so we don't check here
-    '/api/',
-    '/login',
-    '/forgot',
-    '/auth',
-  ],
+  allowUnauthed: ['/login', '/forgot', '/auth'],
   // requireAuth: [],
   check: {
     '/organization/admin': hasPermissions(['org_admin']),
@@ -19,6 +13,12 @@ const protect = protectRoutes({
 });
 
 const auth: Handle = async ({ event, resolve }) => {
+  if (event.url.pathname.startsWith('/api')) {
+    // API handles its own auth, and we don't want to call getUser when doing an API call since it results in
+    // an infinite loop.
+    return resolve(event);
+  }
+
   event.locals.user = await getUser(event);
 
   const protectResult = protect(event);

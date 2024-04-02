@@ -45,7 +45,7 @@
     <label class="flex gap-2 flex-1 max-w-[100ch] text-base" for="path">Add new video</label>
     <div class="flex gap-2">
       <TextField name="url" class="flex-1" autocomplete="off" />
-      <Button type="submit">Add</Button>
+      <Button color="primary" type="submit">Add</Button>
     </div>
   </form>
 
@@ -127,17 +127,4 @@
       </li>
     {/each}
   </ul>
-
-  <form
-    method="POST"
-    action="?/add_existing"
-    use:enhance
-    class="flex flex-col gap-2 rounded-lg border border-border p-4"
-  >
-    <label class="flex gap-2 flex-1 max-w-[100ch] text-base" for="path">Add existing path</label>
-    <div class="flex gap-2">
-      <TextField name="path" class="flex-1" autocomplete="off" />
-      <Button type="submit">Add</Button>
-    </div>
-  </form>
 </main>

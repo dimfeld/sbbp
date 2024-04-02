@@ -6,6 +6,9 @@
 
   settings({
     components: {
+      Button: {
+        variant: 'fill',
+      },
       Field: {
         labelPlacement: 'top',
       },
