@@ -39,7 +39,7 @@ async fn run(job: RunningJob, state: ServerState) -> Result<(), error_stack::Rep
 
     //  We could pipeline this better but it's simpler to just download all the images at once and
     //  then process them after.
-    futures::stream::iter(0..=payload.max_index)
+    futures::stream::iter(1..=payload.max_index)
         .map(|index| {
             let filename = image_filename(index, None);
             let storage_path = format!("{}/{}", payload.storage_prefix, filename);
@@ -107,7 +107,7 @@ async fn thumbnail_pipeline(
     payload: &AnalyzeJobPayload,
     dir: &Path,
 ) -> Result<(), Report<JobError>> {
-    futures::stream::iter(0..=payload.max_index)
+    futures::stream::iter(1..=payload.max_index)
         .map(|index| Ok((index, dir.join(&image_filename(index, None)))))
         .try_for_each_concurrent(8, |(index, disk_path)| async move {
             // Read the image

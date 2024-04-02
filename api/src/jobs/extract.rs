@@ -128,6 +128,8 @@ async fn extract_images(
             "-y",
             "-i",
             video_path,
+            "-vf",
+            &fps,
             "-c:v",
             "libwebp",
             image_template.to_string_lossy().as_ref(),
@@ -168,7 +170,8 @@ async fn extract_images(
     Ok((
         start.elapsed(),
         VideoImages {
-            max_index: num_files - 1,
+            // ffmpeg numbers from 1
+            max_index: num_files,
             interval,
             removed: Vec::new(),
         },

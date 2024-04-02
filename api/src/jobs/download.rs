@@ -31,7 +31,7 @@ struct InfoJson {
     title: String,
     aspect_ratio: f64,
     duration: usize,
-    release_date: String,
+    release_date: Option<String>,
     upload_date: String,
     uploader: String,
     webpage_url: String,
@@ -63,7 +63,7 @@ async fn run(job: RunningJob, state: ServerState) -> Result<(), error_stack::Rep
         .collect::<String>();
     let video_path_template = download_dir.join("video.%(ext)s");
     // Place the infojson at a fixed path
-    let infojson_path_template = download_dir.join("infojson:video");
+    let infojson_path_template = format!("infojson:{}", download_dir.join("video").display());
 
     let download_process = tokio::process::Command::new("yt-dlp")
         .args([
@@ -71,7 +71,7 @@ async fn run(job: RunningJob, state: ServerState) -> Result<(), error_stack::Rep
             "--output",
             video_path_template.to_string_lossy().as_ref(),
             "--output",
-            infojson_path_template.to_string_lossy().as_ref(),
+            &infojson_path_template,
             &payload.download_url,
         ])
         .stdout(std::process::Stdio::piped())
@@ -121,14 +121,16 @@ async fn run(job: RunningJob, state: ServerState) -> Result<(), error_stack::Rep
         processing_state=$2,
         title=$3,
         duration=$4,
-        processed_path=$5,
-        metadata=metadata || $6
+        author=$5,
+        processed_path=$7,
+        metadata=metadata || $8
         WHERE id=$1
         ",
         payload.id.as_uuid(),
         VideoProcessingState::Downloaded as _,
         &info_json.title,
         info_json.duration as i32,
+        &info_json.uploader,
         video_storage_path,
         json!({
             "download": {
