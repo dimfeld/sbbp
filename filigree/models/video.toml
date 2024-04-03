@@ -3,7 +3,9 @@ allow_id_in_create = true
 standard_endpoints = { create = false, update = true, get = true, list = true, delete = true }
 
 shared_types = [
+  "VideoChapter",
   "VideoProcessingState",
+  "VideoMetadata",
 ]
 
 [[fields]]
@@ -53,6 +55,8 @@ user_access = "read"
 [[fields]]
 name = "metadata"
 type = "json"
+rust_type = "crate::models::video::VideoMetadata"
+zod_type = "z.lazy(VideoMetadata)"
 nullable = true
 owner_access = "read"
 user_access = "read"
@@ -130,6 +134,12 @@ permission = "write"
 [[endpoints]]
 name = "get_image"
 path = "videos/:id/image/:image_id"
+method = "get"
+permission = "read"
+
+[[endpoints]]
+name = "get_thumbnail"
+path = "videos/:id/thumbnail"
 method = "get"
 permission = "read"
 

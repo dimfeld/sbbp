@@ -41,7 +41,9 @@ impl UtilCommand {
 fn sync_types() -> Result<(), Report<Error>> {
     let schemas = [
         schema_for!(crate::users::users::SelfUser),
+        schema_for!(crate::models::video::VideoChapter),
         schema_for!(crate::models::video::VideoProcessingState),
+        schema_for!(crate::models::video::VideoMetadata),
     ];
 
     let merged = schemars_zod::merge_schemas(schemas.into_iter());

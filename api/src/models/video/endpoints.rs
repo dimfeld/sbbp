@@ -23,7 +23,7 @@ use url::Url;
 
 use super::{
     image_filename, queries, types::*, VideoId, CREATE_PERMISSION, OWNER_PERMISSION,
-    READ_PERMISSION, WRITE_PERMISSION,
+    READ_PERMISSION, THUMBNAIL_FILENAME, WRITE_PERMISSION,
 };
 use crate::{
     auth::{has_any_permission, Authed},
@@ -187,7 +187,10 @@ async fn rerun_stage(
         "extract" => {
             let video_filename = video
                 .metadata
-                .and_then(|m| m["download"]["filename"].as_str().map(|s| s.to_string()))
+                .as_ref()
+                .and_then(|m| m.download.as_ref())
+                .and_then(|d| d.filename.as_ref())
+                .map(|s| s.to_string())
                 .ok_or(Error::NotFound("Video not downloaded yet"))?;
             crate::jobs::extract::enqueue(
                 &state,
@@ -283,9 +286,29 @@ async fn get_image(
     auth: Authed,
     Path((id, image_id)): Path<(VideoId, usize)>,
 ) -> Result<impl IntoResponse, Error> {
-    // Add your code here
-
     let storage_path = format!("{}/{}", id, image_filename(image_id, None));
+    let response = state
+        .storage
+        .images
+        .stream_to_client(&storage_path)
+        .await
+        .change_context(Error::Storage)?;
+
+    Ok(response)
+}
+
+#[derive(serde::Deserialize, serde::Serialize, Debug, JsonSchema)]
+pub struct GetThumbnailPayload {}
+
+#[derive(serde::Deserialize, serde::Serialize, Debug, JsonSchema)]
+pub struct GetThumbnailResponse {}
+
+async fn get_thumbnail(
+    State(state): State<ServerState>,
+    auth: Authed,
+    Path(id): Path<VideoId>,
+) -> Result<impl IntoResponse, Error> {
+    let storage_path = format!("{}/{}", id, THUMBNAIL_FILENAME);
     let response = state
         .storage
         .images
@@ -340,6 +363,15 @@ pub fn create_routes() -> axum::Router<ServerState> {
         .route(
             "/videos/:id/image/:image_id",
             routing::get(get_image).route_layer(has_any_permission(vec![
+                READ_PERMISSION,
+                WRITE_PERMISSION,
+                OWNER_PERMISSION,
+                "org_admin",
+            ])),
+        )
+        .route(
+            "/videos/:id/thumbnail",
+            routing::get(get_thumbnail).route_layer(has_any_permission(vec![
                 READ_PERMISSION,
                 WRITE_PERMISSION,
                 OWNER_PERMISSION,

@@ -13,7 +13,7 @@ use tokio::io::AsyncWriteExt;
 
 use super::{check_command_result, JobError};
 use crate::{
-    models::video::{VideoId, VideoProcessingState},
+    models::video::{VideoChapter, VideoId, VideoProcessingState, THUMBNAIL_FILENAME},
     server::ServerState,
 };
 
@@ -29,9 +29,11 @@ pub struct DownloadJobPayload {
 struct InfoJson {
     ext: String,
     title: String,
+    thumbnail: Option<String>,
     aspect_ratio: f64,
     duration: usize,
     release_date: Option<String>,
+    chapters: Option<Vec<VideoChapter>>,
     upload_date: String,
     uploader: String,
     webpage_url: String,
@@ -114,6 +116,44 @@ async fn run(job: RunningJob, state: ServerState) -> Result<(), error_stack::Rep
         .change_context(JobError::StorageUpload)
         .attach_printable_lazy(|| video_storage_path.clone())?;
 
+    if let Some(thumbnail) = &info_json.thumbnail {
+        let ext = thumbnail.split('.').last().unwrap_or_default();
+
+        let thumbnail_body = state
+            .filigree
+            .http_client
+            .get(thumbnail)
+            .send()
+            .await
+            .change_context(JobError::ThumbnailDownload)?
+            .bytes()
+            .await
+            .change_context(JobError::ThumbnailDownload)?;
+
+        let image = if ext != "webp" {
+            let im = image::load_from_memory(&thumbnail_body)
+                .change_context(JobError::ThumbnailDownload)
+                .attach_printable("Reading thumbnail")?;
+            let encoded = webp::Encoder::from_image(&im)
+                .map_err(|msg| JobError::WebPEncoder(msg.to_string()))
+                .change_context(JobError::Thumbnail)
+                .attach_printable("encoding thumbnail to webp")?
+                .encode(70.0);
+            Bytes::from(Vec::from(&*encoded))
+        } else {
+            thumbnail_body
+        };
+
+        let thumbnail_output_path = format!("{}/{}", payload.storage_prefix, THUMBNAIL_FILENAME);
+        state
+            .storage
+            .images
+            .put(&thumbnail_output_path, image)
+            .await
+            .change_context(JobError::StorageUpload)
+            .attach_printable_lazy(|| thumbnail_output_path.clone())?;
+    }
+
     let elapsed = start.elapsed();
 
     sqlx::query!(
@@ -136,7 +176,8 @@ async fn run(job: RunningJob, state: ServerState) -> Result<(), error_stack::Rep
             "download": {
                 "duration": elapsed.as_secs(),
                 "filename": video_filename,
-            }
+            },
+            "chapters": info_json.chapters
         }),
     )
     .execute(&state.db)

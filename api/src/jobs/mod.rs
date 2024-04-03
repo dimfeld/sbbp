@@ -27,6 +27,8 @@ enum JobError {
     StartingDownloader,
     #[error("Reading video.info.json")]
     ReadingInfoJson,
+    #[error("Failed to download thumbnail")]
+    ThumbnailDownload,
     #[error("Uploading to storage")]
     StorageUpload,
     #[error("Downloading from storage")]

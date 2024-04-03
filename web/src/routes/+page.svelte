@@ -78,11 +78,11 @@
               {formatDuration(item.duration)}
             </span>
           {:else}
-            <p>{item.url}</p>
+            <p>{item.title || item.url}</p>
             {#if item.processing_state === 'error' && item.process?.error}
               <p class="text-red-500">{item.process.error}</p>
             {:else}
-              <p>{item.title || item.processing_state || ''}</p>
+              <p>{item.processing_state || ''}</p>
             {/if}
           {/if}
         </div>

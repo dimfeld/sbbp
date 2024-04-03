@@ -1,7 +1,7 @@
 import { client, type ModelDefinition } from 'filigree-web';
 import { z } from 'zod';
 import { ObjectPermission } from '../model_types.js';
-import { VideoProcessingState } from '../api_types.js';
+import { VideoProcessingState, VideoMetadata } from '../api_types.js';
 import type { VideoTranscript } from '../transcript.js';
 
 export type VideoId = string;
@@ -17,7 +17,7 @@ export const VideoSchema = z.object({
   duration: z.number().int().optional(),
   author: z.string().optional(),
   date: z.string().optional(),
-  metadata: z.any().optional(),
+  metadata: z.lazy(VideoMetadata).optional(),
   read: z.boolean(),
   progress: z.number().int(),
   images: z.any().optional(),
@@ -59,7 +59,7 @@ export const VideoListResultAndPopulatedListResultSchema = z.object({
   duration: z.number().int().optional(),
   author: z.string().optional(),
   date: z.string().optional(),
-  metadata: z.any().optional(),
+  metadata: z.lazy(VideoMetadata).optional(),
   read: z.boolean(),
   progress: z.number().int(),
   summary: z.string().optional(),
@@ -317,4 +317,21 @@ export async function get_image({ fetch, id, image_id }: GetImageArgs) {
     method: 'GET',
     fetch,
   }).json<GetImageResponse>();
+}
+
+export interface GetThumbnailArgs {
+  id: string;
+  fetch?: typeof fetch;
+}
+
+export interface GetThumbnailPayload {}
+
+export interface GetThumbnailResponse {}
+
+export async function get_thumbnail({ fetch, id }: GetThumbnailArgs) {
+  return client({
+    url: `/api/videos/${id}/thumbnail`,
+    method: 'GET',
+    fetch,
+  }).json<GetThumbnailResponse>();
 }

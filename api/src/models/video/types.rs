@@ -32,6 +32,30 @@ pub enum VideoProcessingState {
     Ready,
 }
 
+#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, schemars::JsonSchema)]
+pub struct VideoChapter {
+    start_time: f32,
+    end_time: f32,
+    title: String,
+}
+
+#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, schemars::JsonSchema)]
+pub struct StageStats {
+    pub duration: usize,
+    pub filename: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, schemars::JsonSchema)]
+pub struct VideoMetadata {
+    pub download: Option<StageStats>,
+    pub audio_extraction: Option<StageStats>,
+    pub image_extraction: Option<StageStats>,
+
+    pub chapters: Option<Vec<VideoChapter>>,
+}
+
+sqlx_json_decode!(VideoMetadata);
+
 #[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq, schemars::JsonSchema)]
 pub struct VideoImages {
     pub max_index: usize,
@@ -57,7 +81,7 @@ pub struct Video {
     pub duration: Option<i32>,
     pub author: Option<String>,
     pub date: Option<chrono::NaiveDate>,
-    pub metadata: Option<serde_json::Value>,
+    pub metadata: Option<crate::models::video::VideoMetadata>,
     pub read: bool,
     pub progress: i32,
     pub images: Option<crate::models::video::VideoImages>,
@@ -115,7 +139,7 @@ impl Video {
         None
     }
 
-    pub fn default_metadata() -> Option<serde_json::Value> {
+    pub fn default_metadata() -> Option<crate::models::video::VideoMetadata> {
         None
     }
 
@@ -257,7 +281,7 @@ pub struct VideoListResultAndPopulatedListResult {
     pub duration: Option<i32>,
     pub author: Option<String>,
     pub date: Option<chrono::NaiveDate>,
-    pub metadata: Option<serde_json::Value>,
+    pub metadata: Option<crate::models::video::VideoMetadata>,
     pub read: bool,
     pub progress: i32,
     pub summary: Option<String>,
@@ -313,7 +337,7 @@ impl VideoListResultAndPopulatedListResult {
         None
     }
 
-    pub fn default_metadata() -> Option<serde_json::Value> {
+    pub fn default_metadata() -> Option<crate::models::video::VideoMetadata> {
         None
     }
 

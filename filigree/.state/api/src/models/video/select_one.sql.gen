@@ -9,7 +9,7 @@ SELECT
   duration,
   author,
   date,
-  metadata,
+  metadata AS "metadata: crate::models::video::VideoMetadata",
   read,
   progress,
   images AS "images: crate::models::video::VideoImages",

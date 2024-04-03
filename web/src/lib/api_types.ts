@@ -19,8 +19,20 @@ export const SelfUser = memoizeOne(() => z.object({permissions: z.array(z.string
 export type SelfUser = z.infer<ReturnType<typeof SelfUser>>;
 
 
+export const StageStats = memoizeOne(() => z.object({duration: z.number().int(), filename: z.union([z.string(), z.null(), ]), }));
+export type StageStats = z.infer<ReturnType<typeof StageStats>>;
+
+
 export const User = memoizeOne(() => z.object({_permission: z.lazy(ObjectPermission), avatar_url: z.union([z.string(), z.null(), ]), created_at: z.coerce.date(), email: z.union([z.string(), z.null(), ]), id: z.string(), name: z.string(), organization_id: z.union([z.string(), z.null(), ]), updated_at: z.coerce.date(), }));
 export type User = z.infer<ReturnType<typeof User>>;
+
+
+export const VideoChapter = memoizeOne(() => z.object({end_time: z.number(), start_time: z.number(), title: z.string(), }));
+export type VideoChapter = z.infer<ReturnType<typeof VideoChapter>>;
+
+
+export const VideoMetadata = memoizeOne(() => z.object({audio_extraction: z.union([z.lazy(StageStats), z.null(), ]), chapters: z.union([z.array(z.lazy(VideoChapter)), z.null(), ]), download: z.union([z.lazy(StageStats), z.null(), ]), image_extraction: z.union([z.lazy(StageStats), z.null(), ]), }));
+export type VideoMetadata = z.infer<ReturnType<typeof VideoMetadata>>;
 
 
 export const VideoProcessingState = memoizeOne(() => z.enum(["queued", "downloading", "downloaded", "processing", "ready", ]));

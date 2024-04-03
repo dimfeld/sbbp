@@ -23,5 +23,7 @@ pub fn image_filename(index: usize, width: Option<usize>) -> String {
     }
 }
 
+pub const THUMBNAIL_FILENAME: &str = "thumbnail.webp";
+
 /// The output template used for ffmpeg when extracting images. This should be kept in sync with [image_filename]
 pub const VIDEO_IMAGE_TEMPLATE: &str = "image-%05d.webp";
