@@ -13,7 +13,7 @@ const protect = protectRoutes({
 });
 
 const auth: Handle = async ({ event, resolve }) => {
-  if (event.url.pathname.startsWith('/api')) {
+  if (event.url.pathname.startsWith('/api/')) {
     // API handles its own auth, and we don't want to call getUser when doing an API call since it results in
     // an infinite loop.
     return resolve(event);
@@ -44,3 +44,13 @@ export function handleError({ error, event, message, status }) {
     error: error.stack ?? JSON.stringify(error, null, 2),
   };
 }
+
+const API_SERVER = process.env.API_SERVER || 'localhost:7823';
+export const handleFetch: HandleFetch = async ({ event, request, fetch }) => {
+  let url = new URL(request.url);
+  if (url.pathname.startsWith('/api/') && url.origin == event.url.origin) {
+    url.host = API_SERVER;
+    request = new Request(url, request);
+  }
+  return fetch(request);
+};

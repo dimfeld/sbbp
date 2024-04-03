@@ -60,7 +60,8 @@ pub struct ServerStateInner {
     pub queue: effectum::Queue,
     /// Object storage providers
     pub storage: storage::AppStorage,
-
+    /// Threshold for similar image detection. Values about this threshold will be considered similar
+    /// Defaults to 0.9
     pub ssim_threshold: f64,
 }
 

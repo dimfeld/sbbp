@@ -14,7 +14,7 @@
     "test:watch": "vitest watch"
   },
   "devDependencies": {
-    "@sveltejs/adapter-node": "^5.0.1",
+    "svelte-adapter-bun": "^0.5.2",
     "@sveltejs/kit": "^2.5.5",
     "@sveltejs/vite-plugin-svelte": "^3.0.2",
     "@typescript-eslint/eslint-plugin": "^7.5.0",
@@ -27,7 +27,7 @@
     "postcss-load-config": "^5.0.3",
     "prettier": "^3.2.5",
     "prettier-plugin-svelte": "^3.2.2",
-    "svelte": "5.0.0-next.92",
+    "svelte": "5.0.0-next.93",
     "svelte-check": "^3.6.9",
     "tailwindcss": "^3.4.3",
     "tslib": "^2.6.2",

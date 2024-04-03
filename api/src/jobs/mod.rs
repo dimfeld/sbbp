@@ -17,7 +17,7 @@ use effectum::{Queue, Worker};
 use error_stack::{Report, ResultExt};
 use futures::FutureExt;
 
-use crate::server::ServerState;
+use crate::{server::ServerState, Error};
 
 #[derive(thiserror::Error, Debug)]
 enum JobError {
@@ -85,42 +85,98 @@ pub async fn create_queue(queue_location: &Path) -> Result<Queue, effectum::Erro
 pub async fn init(
     state: &ServerState,
     init_recurring_jobs: bool,
-) -> Result<QueueWorkers, effectum::Error> {
+) -> Result<QueueWorkers, error_stack::Report<Error>> {
     // register the jobs
-    let analyze_runner = analyze::register(&state.queue, init_recurring_jobs).await?;
-    let download_runner = download::register(&state.queue, init_recurring_jobs).await?;
-    let extract_runner = extract::register(&state.queue, init_recurring_jobs).await?;
-    let summarize_runner = summarize::register(&state.queue, init_recurring_jobs).await?;
-    let transcribe_runner = transcribe::register(&state.queue, init_recurring_jobs).await?;
+    let analyze_runner = analyze::register(&state.queue, init_recurring_jobs)
+        .await
+        .change_context(Error::TaskQueue)?;
+    let download_runner = download::register(&state.queue, init_recurring_jobs)
+        .await
+        .change_context(Error::TaskQueue)?;
+    let extract_runner = extract::register(&state.queue, init_recurring_jobs)
+        .await
+        .change_context(Error::TaskQueue)?;
+    let summarize_runner = summarize::register(&state.queue, init_recurring_jobs)
+        .await
+        .change_context(Error::TaskQueue)?;
+    let transcribe_runner = transcribe::register(&state.queue, init_recurring_jobs)
+        .await
+        .change_context(Error::TaskQueue)?;
 
     // create the workers
+    let worker_compute_min_concurrency =
+        filigree::config::parse_option::<u16>(std::env::var("WORKER_COMPUTE_MIN_CONCURRENCY").ok())
+            .change_context(Error::Config)?
+            .unwrap_or(8);
+    let worker_compute_max_concurrency =
+        filigree::config::parse_option::<u16>(std::env::var("WORKER_COMPUTE_MAX_CONCURRENCY").ok())
+            .change_context(Error::Config)?
+            .unwrap_or(8);
+
     let worker_compute = Worker::builder(&state.queue, state.clone())
-        .max_concurrency(8)
-        .min_concurrency(8)
+        .min_concurrency(worker_compute_min_concurrency)
+        .max_concurrency(worker_compute_max_concurrency)
         .jobs([analyze_runner, extract_runner])
         .build()
-        .await?;
+        .await
+        .change_context(Error::TaskQueue)?;
+
+    let worker_download_min_concurrency = filigree::config::parse_option::<u16>(
+        std::env::var("WORKER_DOWNLOAD_MIN_CONCURRENCY").ok(),
+    )
+    .change_context(Error::Config)?
+    .unwrap_or(2);
+    let worker_download_max_concurrency = filigree::config::parse_option::<u16>(
+        std::env::var("WORKER_DOWNLOAD_MAX_CONCURRENCY").ok(),
+    )
+    .change_context(Error::Config)?
+    .unwrap_or(2);
 
     let worker_download = Worker::builder(&state.queue, state.clone())
-        .max_concurrency(2)
-        .min_concurrency(2)
+        .min_concurrency(worker_download_min_concurrency)
+        .max_concurrency(worker_download_max_concurrency)
         .jobs([download_runner])
         .build()
-        .await?;
+        .await
+        .change_context(Error::TaskQueue)?;
+
+    let worker_summarize_min_concurrency = filigree::config::parse_option::<u16>(
+        std::env::var("WORKER_SUMMARIZE_MIN_CONCURRENCY").ok(),
+    )
+    .change_context(Error::Config)?
+    .unwrap_or(16);
+    let worker_summarize_max_concurrency = filigree::config::parse_option::<u16>(
+        std::env::var("WORKER_SUMMARIZE_MAX_CONCURRENCY").ok(),
+    )
+    .change_context(Error::Config)?
+    .unwrap_or(16);
 
     let worker_summarize = Worker::builder(&state.queue, state.clone())
-        .max_concurrency(16)
-        .min_concurrency(16)
+        .min_concurrency(worker_summarize_min_concurrency)
+        .max_concurrency(worker_summarize_max_concurrency)
         .jobs([summarize_runner])
         .build()
-        .await?;
+        .await
+        .change_context(Error::TaskQueue)?;
+
+    let worker_transcribe_min_concurrency = filigree::config::parse_option::<u16>(
+        std::env::var("WORKER_TRANSCRIBE_MIN_CONCURRENCY").ok(),
+    )
+    .change_context(Error::Config)?
+    .unwrap_or(16);
+    let worker_transcribe_max_concurrency = filigree::config::parse_option::<u16>(
+        std::env::var("WORKER_TRANSCRIBE_MAX_CONCURRENCY").ok(),
+    )
+    .change_context(Error::Config)?
+    .unwrap_or(16);
 
     let worker_transcribe = Worker::builder(&state.queue, state.clone())
-        .max_concurrency(16)
-        .min_concurrency(16)
+        .min_concurrency(worker_transcribe_min_concurrency)
+        .max_concurrency(worker_transcribe_max_concurrency)
         .jobs([transcribe_runner])
         .build()
-        .await?;
+        .await
+        .change_context(Error::TaskQueue)?;
 
     let workers = QueueWorkers {
         compute: worker_compute,

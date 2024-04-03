@@ -82,7 +82,7 @@
             {#if item.processing_state === 'error' && item.process?.error}
               <p class="text-red-500">{item.process.error}</p>
             {:else}
-              <p>{item.processing_state || ''}</p>
+              <p>{item.title || item.processing_state || ''}</p>
             {/if}
           {/if}
         </div>
