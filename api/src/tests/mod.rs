@@ -91,7 +91,7 @@ pub async fn start_app_with_options(
     let config = crate::server::Config {
         env: "test".into(),
         bind: crate::server::ServerBind::Listener(listener),
-        frontend_port: 5173,
+        serve_frontend: None,
         insecure: true,
         request_timeout: std::time::Duration::from_secs(30),
         pg_pool: pg_pool.clone(),
