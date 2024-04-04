@@ -175,10 +175,14 @@ impl Server {
         self,
         shutdown: impl Future<Output = ()> + Send + 'static,
     ) -> Result<(), Report<Error>> {
-        axum::serve(self.listener, self.app)
-            .with_graceful_shutdown(shutdown)
-            .await
-            .change_context(Error::ServerStart)?;
+        axum::serve(
+            self.listener,
+            self.app
+                .into_make_service_with_connect_info::<std::net::SocketAddr>(),
+        )
+        .with_graceful_shutdown(shutdown)
+        .await
+        .change_context(Error::ServerStart)?;
 
         event!(Level::INFO, "Shutting down queue");
         self.queue_workers.shutdown().await;
@@ -222,6 +226,8 @@ pub struct Config {
     pub env: String,
     /// The host and port to bind to, or an existing TCP listener
     pub bind: ServerBind,
+    /// The port to forward non-API requests to
+    pub frontend_port: u16,
     /// True if the site is being hosted on plain HTTP. This should only be set in a development
     /// or testing environment.
     pub insecure: bool,
@@ -344,6 +350,22 @@ pub async fn create_server(config: Config) -> Result<Server, Report<Error>> {
         .merge(crate::auth::create_routes())
         .layer(
             ServiceBuilder::new()
+                .layer(CompressionLayer::new())
+                .decompression()
+                .layer(filigree::auth::middleware::AuthLayer::new(auth_queries)),
+        );
+
+    let api_routes: Router<()> = api_routes.with_state(state.clone());
+
+    let fallback =
+        filigree::route_services::ForwardRequest::new("http://localhost:5173".to_string());
+
+    let app = Router::new()
+        .nest("/api", api_routes)
+        .route_service("/", fallback.clone())
+        .route_service("/*path", fallback)
+        .layer(
+            ServiceBuilder::new()
                 .layer(panic_handler(production))
                 .layer(ObfuscateErrorLayer::new(ObfuscateErrorLayerSettings {
                     enabled: obfuscate_errors,
@@ -358,18 +380,11 @@ pub async fn create_server(config: Config) -> Result<Server, Report<Error>> {
                 )
                 .layer(TimeoutLayer::new(config.request_timeout))
                 .layer(api_cors_layer)
-                .layer(CompressionLayer::new())
                 .layer(tower_cookies::CookieManagerLayer::new())
                 .set_x_request_id(MakeRequestUuid)
                 .propagate_x_request_id()
-                .decompression()
-                .layer(filigree::auth::middleware::AuthLayer::new(auth_queries))
                 .into_inner(),
         );
-
-    let api_routes: Router<()> = api_routes.with_state(state.clone());
-
-    let app = Router::new().nest("/api", api_routes);
 
     let listener = match config.bind {
         ServerBind::Listener(l) => l,
