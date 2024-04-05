@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM users\nWHERE id = $1\n  AND organization_id = $2\n  AND EXISTS (\n    SELECT\n      1\n    FROM\n      permissions\n    WHERE\n      organization_id = $2\n      AND actor_id = ANY ($3)\n      AND permission IN ('org_admin', 'User::owner'))\n",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "UuidArray"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "296ac43d023d1b529002435d7d3b1f05c2d769dbd5f56a70a9c1fb370ded2340"
+}

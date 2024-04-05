@@ -1,0 +1,128 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO videos (\n  id,\n  organization_id,\n  title,\n  read,\n  progress)\nVALUES (\n  $1,\n  $2,\n  $3,\n  $4,\n  $5)\nRETURNING\n  id AS \"id: VideoId\",\n  organization_id AS \"organization_id: crate::models::organization::OrganizationId\",\n  updated_at,\n  created_at,\n  processing_state AS \"processing_state: crate::models::video::VideoProcessingState\",\n  url,\n  title,\n  duration,\n  author,\n  date,\n  metadata AS \"metadata: crate::models::video::VideoMetadata\",\n  read,\n  progress,\n  images AS \"images: crate::models::video::VideoImages\",\n  transcript,\n  summary,\n  processed_path,\n  'owner' AS \"_permission!: filigree::auth::ObjectPermission\"\n",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id: VideoId",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "organization_id: crate::models::organization::OrganizationId",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 3,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 4,
+        "name": "processing_state: crate::models::video::VideoProcessingState",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "title",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "duration",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 8,
+        "name": "author",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 9,
+        "name": "date",
+        "type_info": "Date"
+      },
+      {
+        "ordinal": 10,
+        "name": "metadata: crate::models::video::VideoMetadata",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 11,
+        "name": "read",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 12,
+        "name": "progress",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 13,
+        "name": "images: crate::models::video::VideoImages",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 14,
+        "name": "transcript",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 15,
+        "name": "summary",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 16,
+        "name": "processed_path",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 17,
+        "name": "_permission!: filigree::auth::ObjectPermission",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Bool",
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      null
+    ]
+  },
+  "hash": "3607b8ccf09ec281b061630624a0ea049f0bc8a89d85ae134f72ce893afa30fe"
+}

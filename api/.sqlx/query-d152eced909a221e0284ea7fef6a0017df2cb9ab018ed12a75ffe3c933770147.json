@@ -1,0 +1,47 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "WITH base_lookup AS (\n  SELECT\n    api_keys.user_id,\n    -- API key always uses the organization the key was created with,\n    -- regardless of the currently-chosen org in the user object.\n    api_keys.organization_id,\n    api_keys.inherits_user_permissions,\n    om.active\n  FROM\n    api_keys\n    JOIN organization_members om ON om.user_id = api_keys.user_id\n      AND om.organization_id = api_keys.organization_id\n  WHERE\n    api_key_id = $1\n    AND hash = $2\n    -- API key must be enabled\n    AND api_keys.active\n    -- Disable API key if the user was removed from the org\n    AND om.active\n    -- API key must not be expired\n    AND (expires_at IS NULL\n      OR expires_at > now())\n  LIMIT 1\n),\nrole_lookup AS (\n  SELECT\n    role_id,\n    organization_id\n  FROM\n    base_lookup\n    JOIN user_roles USING (user_id, organization_id)\n),\nactor_ids AS (\n  SELECT\n    CASE WHEN inherits_user_permissions THEN\n      user_id\n    ELSE\n      $1\n    END AS actor_id,\n    organization_id\n  FROM\n    base_lookup\nUNION ALL\nSELECT\n  role_id AS actor_id,\n  role_lookup.organization_id\nFROM\n  role_lookup\n  CROSS JOIN base_lookup\n  WHERE\n    base_lookup.inherits_user_permissions\n),\npermissions AS (\n  SELECT\n    COALESCE(ARRAY_AGG(DISTINCT permission) FILTER (WHERE permission IS NOT NULL), ARRAY[]::text[]) AS permissions\n  FROM\n    actor_ids\n    LEFT JOIN permissions USING (actor_id, organization_id))\nSELECT\n  bl.user_id AS \"user_id!: crate::models::user::UserId\",\n  bl.organization_id AS \"organization_id!: crate::models::organization::OrganizationId\",\n  bl.active,\n  COALESCE((\n    SELECT\n      ARRAY_AGG(role_id) FILTER (WHERE role_id IS NOT NULL)\nFROM role_lookup), ARRAY[]::uuid[]) AS \"roles!: Vec<RoleId>\",\n  permissions AS \"permissions!: Vec<String>\"\nFROM\n  base_lookup bl\n  LEFT JOIN permissions ON TRUE\n",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "user_id!: crate::models::user::UserId",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "organization_id!: crate::models::organization::OrganizationId",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "active",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 3,
+        "name": "roles!: Vec<RoleId>",
+        "type_info": "UuidArray"
+      },
+      {
+        "ordinal": 4,
+        "name": "permissions!: Vec<String>",
+        "type_info": "TextArray"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Bytea"
+      ]
+    },
+    "nullable": [
+      true,
+      false,
+      false,
+      null,
+      null
+    ]
+  },
+  "hash": "d152eced909a221e0284ea7fef6a0017df2cb9ab018ed12a75ffe3c933770147"
+}

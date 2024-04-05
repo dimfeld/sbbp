@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE videos SET\n        transcript = $2,\n        metadata = metadata || $3\n        WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Jsonb",
+        "Jsonb"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "63862c17da19e5865a950b1ff2b116aa2df2ceaa90c4a153bf2c6bc187db325a"
+}

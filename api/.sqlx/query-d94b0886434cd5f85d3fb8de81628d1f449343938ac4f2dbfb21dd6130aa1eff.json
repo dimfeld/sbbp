@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE videos SET summary = $1, processing_state = 'ready' WHERE id = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "d94b0886434cd5f85d3fb8de81628d1f449343938ac4f2dbfb21dd6130aa1eff"
+}

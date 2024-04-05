@@ -1,0 +1,27 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "WITH permissions AS (\n  SELECT\n    COALESCE(bool_or(permission IN ('org_admin', 'Video::owner')), FALSE) AS is_owner,\n    COALESCE(bool_or(permission IN ('org_admin', 'Video::owner', 'Video::write')), FALSE) AS is_user\n  FROM\n    permissions\n  WHERE\n    organization_id = $2\n    AND actor_id = ANY ($3)\n    AND permission IN ('org_admin', 'Video::owner', 'Video::write'))\nUPDATE\n  videos\nSET\n  title = CASE WHEN permissions.is_owner THEN\n    $4\n  ELSE\n    videos.title\n  END,\n  read = CASE WHEN permissions.is_owner THEN\n    $5\n  ELSE\n    videos.read\n  END,\n  progress = CASE WHEN permissions.is_owner THEN\n    $6\n  ELSE\n    videos.progress\n  END,\n  updated_at = now()\nFROM\n  permissions\nWHERE\n  id = $1\n  AND organization_id = $2\n  AND (permissions.is_owner\n    OR permissions.is_user)\nRETURNING\n  permissions.is_owner AS \"is_owner!\"\n",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "is_owner!",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "UuidArray",
+        "Text",
+        "Bool",
+        "Int4"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "ef8eead497f1c3936fdc7d509fa1ef9a18fba687e6003e7c481c24edc60881ac"
+}

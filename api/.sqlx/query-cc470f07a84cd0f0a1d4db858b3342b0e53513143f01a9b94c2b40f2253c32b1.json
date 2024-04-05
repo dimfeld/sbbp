@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE videos\n        SET images = images || $2\n        WHERE id=$1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Jsonb"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "cc470f07a84cd0f0a1d4db858b3342b0e53513143f01a9b94c2b40f2253c32b1"
+}

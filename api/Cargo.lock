@@ -1283,6 +1283,7 @@ dependencies = [
 [[package]]
 name = "filigree"
 version = "0.0.2"
+source = "git+https://github.com/dimfeld/filigree.git#64e9a93de110965598980e1421dbc046cec801a0"
 dependencies = [
  "argon2",
  "async-trait",

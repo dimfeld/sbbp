@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT\n  CASE WHEN bool_or(permission IN ('org_admin', 'Role::owner')) THEN\n    'owner'\n  WHEN bool_or(permission = 'Role::write') THEN\n    'write'\n  WHEN bool_or(permission = 'Role::read') THEN\n    'read'\n  ELSE\n    NULL\n  END _permission\nFROM\n  permissions\nWHERE\n  organization_id = $1\n  AND actor_id = ANY ($2)\n  AND permission IN ('org_admin', 'Role::owner', 'Role::write', 'Role::read')\n",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "_permission",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "UuidArray"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "59220e7008897a04e0ac5a5616d671ef356d5ed3b5991c4e6a416fd60633df00"
+}

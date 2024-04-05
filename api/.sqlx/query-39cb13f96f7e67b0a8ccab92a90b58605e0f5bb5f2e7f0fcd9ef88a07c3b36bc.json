@@ -1,0 +1,61 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO roles (\n  id,\n  organization_id,\n  name,\n  description)\nVALUES (\n  $1,\n  $2,\n  $3,\n  $4)\nRETURNING\n  id AS \"id: RoleId\",\n  organization_id AS \"organization_id: crate::models::organization::OrganizationId\",\n  updated_at,\n  created_at,\n  name,\n  description,\n  'owner' AS \"_permission!: filigree::auth::ObjectPermission\"\n",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id: RoleId",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "organization_id: crate::models::organization::OrganizationId",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 3,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 4,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "_permission!: filigree::auth::ObjectPermission",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      null
+    ]
+  },
+  "hash": "39cb13f96f7e67b0a8ccab92a90b58605e0f5bb5f2e7f0fcd9ef88a07c3b36bc"
+}

@@ -1,0 +1,126 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT\n  id AS \"id: VideoId\",\n  organization_id AS \"organization_id: crate::models::organization::OrganizationId\",\n  updated_at,\n  created_at,\n  processing_state AS \"processing_state: crate::models::video::VideoProcessingState\",\n  url,\n  title,\n  duration,\n  author,\n  date,\n  metadata AS \"metadata: crate::models::video::VideoMetadata\",\n  read,\n  progress,\n  images AS \"images: crate::models::video::VideoImages\",\n  transcript,\n  summary,\n  processed_path,\n  _permission AS \"_permission!: filigree::auth::ObjectPermission\"\nFROM\n  videos tb\n  JOIN LATERAL (\n    SELECT\n      CASE WHEN bool_or(permission IN ('org_admin', 'Video::owner')) THEN\n        'owner'\n      WHEN bool_or(permission = 'Video::write') THEN\n        'write'\n      WHEN bool_or(permission = 'Video::read') THEN\n        'read'\n      ELSE\n        NULL\n      END _permission\n    FROM\n      permissions\n    WHERE\n      organization_id = $2\n      AND actor_id = ANY ($3)\n      AND permission IN ('org_admin', 'Video::owner', 'Video::write', 'Video::read'))\n\t_permission ON _permission IS NOT NULL\nWHERE\n  tb.id = $1\n  AND tb.organization_id = $2\n",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id: VideoId",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "organization_id: crate::models::organization::OrganizationId",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 3,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 4,
+        "name": "processing_state: crate::models::video::VideoProcessingState",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "title",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "duration",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 8,
+        "name": "author",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 9,
+        "name": "date",
+        "type_info": "Date"
+      },
+      {
+        "ordinal": 10,
+        "name": "metadata: crate::models::video::VideoMetadata",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 11,
+        "name": "read",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 12,
+        "name": "progress",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 13,
+        "name": "images: crate::models::video::VideoImages",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 14,
+        "name": "transcript",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 15,
+        "name": "summary",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 16,
+        "name": "processed_path",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 17,
+        "name": "_permission!: filigree::auth::ObjectPermission",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "UuidArray"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      null
+    ]
+  },
+  "hash": "b1086ef88ac14c3415facc6b2ad6cd0627940ddc1e79d3820f1b7691a2703294"
+}

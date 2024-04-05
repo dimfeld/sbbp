@@ -1,0 +1,66 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT\n  id AS \"id: UserId\",\n  organization_id AS \"organization_id: crate::models::organization::OrganizationId\",\n  updated_at,\n  created_at,\n  name,\n  email,\n  avatar_url,\n  _permission AS \"_permission!: filigree::auth::ObjectPermission\"\nFROM\n  users tb\n  JOIN LATERAL (\n    SELECT\n      CASE WHEN bool_or(permission IN ('org_admin', 'User::owner')) THEN\n        'owner'\n      WHEN bool_or(permission = 'User::write') THEN\n        'write'\n      WHEN bool_or(permission = 'User::read') THEN\n        'read'\n      ELSE\n        NULL\n      END _permission\n    FROM\n      permissions\n    WHERE\n      organization_id = $2\n      AND actor_id = ANY ($3)\n      AND permission IN ('org_admin', 'User::owner', 'User::write', 'User::read'))\n\t_permission ON _permission IS NOT NULL\nWHERE\n  tb.id = $1\n  AND tb.organization_id = $2\n",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id: UserId",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "organization_id: crate::models::organization::OrganizationId",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 3,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 4,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "email",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "avatar_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "_permission!: filigree::auth::ObjectPermission",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "UuidArray"
+      ]
+    },
+    "nullable": [
+      false,
+      true,
+      false,
+      false,
+      false,
+      true,
+      true,
+      null
+    ]
+  },
+  "hash": "a8c9ac12b4086ddc65ed63b36f6774744a3697c6a8557c9a9de64802ff7805f6"
+}

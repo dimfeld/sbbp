@@ -1,0 +1,47 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "WITH base_lookup AS (\n  SELECT\n    sess.user_id,\n    users.organization_id,\n    om.active\n  FROM\n    user_sessions sess\n    JOIN users ON sess.user_id = users.id\n    JOIN organization_members om ON users.id = om.user_id\n      AND users.organization_id = om.organization_id\n  WHERE\n    sess.id = $1\n    AND sess.hash = $2\n    AND expires_at > now()\n  LIMIT 1\n),\nrole_lookup AS (\n  SELECT\n    role_id,\n    organization_id\n  FROM\n    base_lookup\n    JOIN user_roles USING (user_id, organization_id)\n),\nactor_ids AS (\n  SELECT\n    user_id AS actor_id,\n    organization_id\n  FROM\n    base_lookup\nUNION ALL\nSELECT\n  role_id AS actor_id,\n  organization_id\nFROM\n  role_lookup\n),\npermissions AS (\n  SELECT\n    COALESCE(ARRAY_AGG(DISTINCT permission) FILTER (WHERE permission IS NOT NULL), ARRAY[]::text[]) AS permissions\n  FROM\n    actor_ids\n    LEFT JOIN permissions USING (actor_id, organization_id))\nSELECT\n  bl.user_id AS \"user_id!: crate::models::user::UserId\",\n  bl.organization_id AS \"organization_id!: crate::models::organization::OrganizationId\",\n  bl.active,\n  COALESCE((\n    SELECT\n      ARRAY_AGG(role_id) FILTER (WHERE role_id IS NOT NULL)\nFROM role_lookup), ARRAY[]::uuid[]) AS \"roles!: Vec<RoleId>\",\n  permissions AS \"permissions!: Vec<String>\"\nFROM\n  base_lookup bl\n  LEFT JOIN permissions ON TRUE\n",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "user_id!: crate::models::user::UserId",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "organization_id!: crate::models::organization::OrganizationId",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "active",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 3,
+        "name": "roles!: Vec<RoleId>",
+        "type_info": "UuidArray"
+      },
+      {
+        "ordinal": 4,
+        "name": "permissions!: Vec<String>",
+        "type_info": "TextArray"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      true,
+      false,
+      null,
+      null
+    ]
+  },
+  "hash": "111c348de1771adf59adae59eeb1758c6ceec17b90e589611389b1c8441f1c3b"
+}

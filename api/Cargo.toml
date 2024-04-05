@@ -20,7 +20,8 @@ dotenvy = "0.15.7"
 effectum = "0.6.0"
 error-stack = { version = "0.4.1", features = ["spantrace"] }
 eyre = "0.6.11"
-filigree = { path = "../../filigree/filigree" }
+filigree = { git = "https://github.com/dimfeld/filigree.git" }
+#filigree = { path = "../../filigree/filigree" }
 futures = "0.3.30"
 http = "1.0.0"
 hyper = { version = "1.1.0", features = ["server", "http1", "http2"] }
@@ -53,3 +54,6 @@ webp = "0.2.7"
 
 [dev-dependencies]
 temp-dir = "0.1.13"
+
+[profile.dev.package.sqlx-macros]
+opt-level = 3

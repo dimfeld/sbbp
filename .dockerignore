@@ -4,5 +4,8 @@ processed
 __pycache__
 storage
 queue.db
+api/target
+web/node_modules
+filigree
 .env
-node_modules.tgz
+.env.*

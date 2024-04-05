@@ -1,2 +1,2 @@
-api: /app/api
+api: /app/api serve
 web: env PORT=5173 bun /app/web/index.js
