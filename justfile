@@ -10,3 +10,9 @@ sync-types:
 prepare:
   @just filigree
   @just sync-types
+
+dev-api:
+  cd api && cargo watch -s 'cargo run --release -- serve'
+
+dev-web:
+  cd web && bun run dev

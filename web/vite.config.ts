@@ -3,6 +3,7 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
   plugins: [sveltekit()],
+  envDir: '..',
   test: {
     testTimeout: 5000,
   },
@@ -11,6 +12,10 @@ export default defineConfig({
   },
   ssr: {
     noExternal: ['filigree-web'],
+  },
+  resolve: {
+    // Useful for development
+    dedupe: ['svelte', '@sveltejs/kit'],
   },
   server: {
     proxy: {

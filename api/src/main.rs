@@ -2,7 +2,7 @@ use clap::{Args, Parser, Subcommand};
 use error_stack::{Report, ResultExt};
 use filigree::{
     auth::{CorsSetting, SameSiteArg, SessionCookieBuilder},
-    tracing_config::{configure_tracing, teardown_tracing, TracingExportConfig},
+    tracing_config::{configure_tracing, teardown_tracing, TracingProvider},
 };
 use sbbp_api::{cmd, db, emails, server, Error};
 use tracing::{event, Level};
@@ -125,20 +125,22 @@ struct ServeCommand {
     /// The location to store the queue database
     #[clap(long, env = "QUEUE_PATH", default_value_t = String::from("queue.db"))]
     queue_path: String,
-    // tracing endpoint (if any)
-    // honeycomb team
-    // honeycomb dataset
-    // jaeger service name
-    // jaeger endpoint
 }
 
 async fn serve(cmd: ServeCommand) -> Result<(), Report<Error>> {
     error_stack::Report::set_color_mode(error_stack::fmt::ColorMode::None);
 
-    // TODO make this configurable
+    let tracing_config = filigree::tracing_config::create_tracing_config(
+        "",
+        TracingProvider::Jaeger,
+        Some("sbbp-api".to_string()),
+        None,
+    )
+    .change_context(Error::ServerStart)?;
+
     configure_tracing(
         "",
-        TracingExportConfig::None,
+        tracing_config,
         tracing_subscriber::fmt::time::ChronoUtc::rfc_3339(),
         std::io::stdout,
     )
@@ -223,9 +225,39 @@ async fn serve(cmd: ServeCommand) -> Result<(), Report<Error>> {
     Ok(())
 }
 
-#[tokio::main(flavor = "multi_thread")]
-pub async fn main() -> Result<(), Report<Error>> {
-    dotenvy::dotenv().ok();
+fn main() -> Result<(), Report<Error>> {
+    // Sentry should be initialized prior to starting Tokio.
+    let env = std::env::var("ENV").unwrap_or_else(|_| String::from("development"));
+    use sentry::IntoDsn;
+    let sentry_dsn = std::env::var("SENTRY_DSN")
+        .ok()
+        .into_dsn()
+        .expect("Parsing SENTRY_DSN");
+    let _sentry_guard = sentry::init(sentry::ClientOptions {
+        release: sentry::release_name!(),
+        environment: Some(std::borrow::Cow::Owned(env)),
+        default_integrations: true,
+        dsn: sentry_dsn,
+        ..Default::default()
+    });
+
+    tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()
+        .unwrap()
+        .block_on(actual_main())
+}
+
+pub async fn actual_main() -> Result<(), Report<Error>> {
+    let read_dotenv = std::env::var("READ_DOTENV")
+        .ok()
+        .and_then(|v| v.parse::<bool>().ok())
+        .unwrap_or(true);
+
+    if read_dotenv {
+        dotenvy::dotenv().ok();
+    }
+
     let cli = Cli::parse();
 
     match cli.command {

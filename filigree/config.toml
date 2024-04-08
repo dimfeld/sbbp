@@ -6,6 +6,13 @@ default_auth_scope = "model"
 api_dir = "api"
 web_dir = "web"
 
+[error_reporting]
+provider = "sentry"
+
+[tracing]
+provider = "jaeger"
+api_service_name = "sbbp-api"
+
 [secrets]
 deepgram = "DEEPGRAM_API_KEY"
 anthropic = "ANTHROPIC_API_KEY"
