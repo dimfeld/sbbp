@@ -41,7 +41,7 @@
     "@mdi/js": "^7.4.47",
     "clsx": "^2.1.0",
     "execa": "^8.0.1",
-    "filigree-web": "file:../../filigree/web",
+    "filigree-svelte": "file:../../filigree/svelte",
     "svelte-ux": "^0.62.6",
     "tailwind-merge": "^2.2.2",
     "tailwind-variants": "^0.2.1",

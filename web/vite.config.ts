@@ -8,10 +8,10 @@ export default defineConfig({
     testTimeout: 5000,
   },
   optimizeDeps: {
-    exclude: ['filigree-web'],
+    exclude: ['filigree-svelte'],
   },
   ssr: {
-    noExternal: ['filigree-web'],
+    noExternal: ['filigree-svelte'],
   },
   resolve: {
     // Useful for development

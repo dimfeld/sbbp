@@ -1,6 +1,6 @@
 import { create_via_url, mark_read, rerun_stage, type VideoListResult } from '$lib/models/video';
 import { type Actions, fail } from '@sveltejs/kit';
-import { client } from 'filigree-web';
+import { client } from 'filigree-svelte';
 
 export const actions = {
   download: async (event) => {

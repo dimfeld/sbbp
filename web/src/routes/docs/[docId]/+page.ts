@@ -1,6 +1,6 @@
 import type { Video } from '$lib/models/video';
 import { error } from '@sveltejs/kit';
-import { client } from 'filigree-web';
+import { client } from 'filigree-svelte';
 
 export async function load({ params, fetch }) {
   const item = await client({

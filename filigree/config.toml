@@ -21,6 +21,9 @@ anthropic = "ANTHROPIC_API_KEY"
 dotenv = true
 hosts = ["localhost"]
 
+[web]
+framework = "sveltekit"
+
 [formatter]
 js = ["prettierd", "stdin.ts" ]
 rust = ["rustfmt", "+nightly"]

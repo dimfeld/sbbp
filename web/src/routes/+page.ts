@@ -1,5 +1,5 @@
 import { type VideoListResult } from '$lib/models/video';
-import { client } from 'filigree-web';
+import { client } from 'filigree-svelte';
 
 export async function load({ depends, fetch }) {
   depends('resource://items');
