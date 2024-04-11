@@ -1,13 +1,3 @@
-// Dependencies
-// axum = "0.7.2"
-// axum-auth = "0.4.1"
-// axum-extra = { version = "0.9.0", features = ["typed-routing", "form"] }
-// error-stack = { version = "0.4.1", features = ["eyre"] }
-// hyper = "^0.14"
-// tower = "0.4.13"
-// tower-http = { version = "0.4.4", features = ["util", "catch-panic", "request-id", "trace", "limit", "compression-deflate", "compression-gzip", "compression-zstd", "decompression-full"] }
-// tracing = "0.1.40"
-
 use std::{
     future::Future,
     net::{IpAddr, SocketAddr},
@@ -15,7 +5,7 @@ use std::{
     time::Duration,
 };
 
-use axum::{extract::FromRef, routing::get, Router};
+use axum::{extract::FromRef, handler::Handler, routing::get, Router};
 use error_stack::{Report, ResultExt};
 use filigree::{
     auth::{
@@ -33,7 +23,7 @@ use tower_http::{
     cors::CorsLayer,
     request_id::MakeRequestUuid,
     timeout::TimeoutLayer,
-    trace::{DefaultMakeSpan, DefaultOnFailure, DefaultOnRequest, DefaultOnResponse, TraceLayer},
+    trace::{DefaultOnFailure, DefaultOnRequest, DefaultOnResponse, TraceLayer},
     ServiceBuilderExt,
 };
 use tracing::{event, Level};
@@ -356,13 +346,19 @@ pub async fn create_server(config: Config) -> Result<Server, Report<Error>> {
         .merge(filigree::auth::oauth::create_routes())
         .merge(crate::models::create_routes())
         .merge(crate::users::users::create_routes())
-        .merge(crate::auth::create_routes());
+        .merge(crate::auth::create_routes())
+        // Return not found here so we don't run the other non-API fallbacks
+        .fallback(|| async { Error::NotFound("Route") });
 
-    let api_routes: Router<()> = api_routes.with_state(state.clone());
+    let web_routes = crate::pages::create_routes();
 
-    let app = Router::new().nest("/api", api_routes);
+    let app = Router::new().nest("/api", api_routes).merge(web_routes);
 
-    let app = match config.serve_frontend {
+    let (mut web_port, mut web_dir) = config.serve_frontend;
+    web_port = web_port.filter(|p| *p != 0);
+    web_dir = web_dir.filter(|p| !p.is_empty());
+
+    let app = match (web_port, web_dir) {
         (Some(web_port), Some(web_dir)) => {
             let fallback = filigree::route_services::ForwardRequest::new(format!(
                 "http://localhost:{web_port}"
@@ -371,7 +367,7 @@ pub async fn create_server(config: Config) -> Result<Server, Report<Error>> {
             let serve_fs = tower_http::services::ServeDir::new(web_dir)
                 .precompressed_gzip()
                 .precompressed_br()
-                // Pass non-GET methods to the callback instead of returning 405
+                // Pass non-GET methods to the fallback instead of returning 405
                 .call_fallback_on_method_not_allowed(true)
                 .fallback(fallback.clone());
 
@@ -389,13 +385,14 @@ pub async fn create_server(config: Config) -> Result<Server, Report<Error>> {
             let serve_fs = tower_http::services::ServeDir::new(web_dir)
                 .precompressed_gzip()
                 .precompressed_br()
-                .append_index_html_on_directories(true);
-            app.route_service("/static/*path", serve_fs)
+                .append_index_html_on_directories(true)
+                .fallback(crate::pages::not_found::not_found_fallback.with_state(state.clone()));
+            app.fallback_service(serve_fs)
         }
         (None, None) => app,
     };
 
-    let app = app.layer(
+    let app = app.with_state(state.clone()).layer(
         ServiceBuilder::new()
             .layer(panic_handler(production))
             .layer(ObfuscateErrorLayer::new(ObfuscateErrorLayerSettings {
@@ -406,7 +403,18 @@ pub async fn create_server(config: Config) -> Result<Server, Report<Error>> {
             .layer(sentry_tower::SentryHttpLayer::with_transaction())
             .layer(
                 TraceLayer::new_for_http()
-                    .make_span_with(DefaultMakeSpan::new().level(Level::INFO))
+                    .make_span_with(|req: &axum::extract::Request| {
+                        let method = req.method();
+                        let uri = req.uri();
+
+                        // Add the matched route to the span
+                        let route = req
+                            .extensions()
+                            .get::<axum::extract::MatchedPath>()
+                            .map(|matched_path| matched_path.as_str());
+
+                        tracing::info_span!("request", %method, %uri, route)
+                    })
                     .on_response(DefaultOnResponse::new().level(Level::INFO))
                     .on_request(DefaultOnRequest::new().level(Level::INFO))
                     .on_failure(DefaultOnFailure::new().level(Level::ERROR)),

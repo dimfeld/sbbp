@@ -1,0 +1,26 @@
+{
+  "name": "sbbp-htmx",
+  "module": "src/index.ts",
+  "type": "module",
+  "scripts": {
+    "build": "NODE_ENV=${NODE_ENV:-production} bun build.ts",
+    "dev": "NODE_ENV=development vite build --mode development --watch",
+    "bundle:watch": "bun build src/index.ts --outdir build --sourcemap external --watch",
+    "compress-output": "bun compress_output.ts",
+    "tailwind:watch": "tailwindcss -c ./tailwind.config.js -i ./app.postcss -o ./build/style.css --watch"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "autoprefixer": "^10.4.19",
+    "tailwindcss": "^3.4.3",
+    "vite": "^5.2.8"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "alpinejs": "^3.13.8",
+    "htmx.org": "^1.9.11",
+    "prettier": "^3.2.5"
+  }
+}

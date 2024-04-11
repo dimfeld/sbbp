@@ -1,0 +1,34 @@
+require_auth = true
+
+[[pages]]
+path = "/"
+
+[[pages.actions]]
+name = "add_video"
+method =  "POST"
+input.url = "string"
+permission = "Video:write"
+
+[[pages.actions]]
+name = "rerun_stage"
+path = "videos/:id/rerun/:stage"
+params.id = "crate::models::video::VideoId"
+method = "post"
+permission = "Video:owner"
+
+[[pages.actions]]
+name = "mark_read"
+path = "videos/:id/mark_read"
+params.id = "crate::models::video::VideoId"
+method = "post"
+input.read = "boolean"
+permission = "Video:write"
+
+[[pages.actions]]
+name = "get_image"
+path = "image/:image_id"
+method = "get"
+permission = "Video:read"
+
+[[pages]]
+path = "/docs/:docId"
