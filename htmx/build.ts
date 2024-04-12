@@ -12,7 +12,7 @@ const args = parseArgs({
 
 await $`rm -rf build/*`.nothrow().quiet();
 
-await $`vite build`;
+await $`NODE_ENV=production vite build`;
 
 // Alter the manifest to better reflect what things feel like at runtime.
 // This way you can reference "index.js" instead of "src/index.ts".

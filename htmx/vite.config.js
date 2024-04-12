@@ -9,7 +9,7 @@ const enableLiveReload = !production || process.env.LIVE_RELOAD === 'true';
 export default defineConfig({
   build: {
     outDir: 'build',
-    assetsDir: 'static',
+    assetsDir: '_app/immutable',
     copyPublicDir: true,
     manifest: true,
     minify: production,
@@ -28,7 +28,7 @@ export default defineConfig({
   },
   define: {
     'process.env.ENV': env,
-    'process.env.LIVE_RELOAD': enableLiveReload,
+    'process.env.LIVE_RELOAD': enableLiveReload ? `'true'` : `'false'`,
   },
   plugins: [
     {

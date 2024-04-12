@@ -6,7 +6,7 @@ import Alpine from 'alpinejs';
 window.Alpine = Alpine;
 window.htmx = htmx;
 
-if (process.env.LIVE_RELOAD) {
+if (process.env.LIVE_RELOAD === 'true') {
   startLiveReload();
 }
 
