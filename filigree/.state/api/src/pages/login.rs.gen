@@ -8,7 +8,7 @@ use filigree::{
     auth::password::{login_with_password, EmailAndPassword},
     extract::FormOrJson,
 };
-use maud::{html, Markup, DOCTYPE};
+use maud::html;
 use schemars::JsonSchema;
 
 use crate::{

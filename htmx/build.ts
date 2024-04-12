@@ -14,6 +14,16 @@ await $`rm -rf build/*`.nothrow().quiet();
 
 await $`vite build`;
 
+// Alter the manifest to better reflect what things feel like at runtime.
+// This way you can reference "index.js" instead of "src/index.ts".
+let manifest = await Bun.file('build/.vite/manifest.json').json();
+manifest = Object.entries(manifest).reduce((acc: Record<string, unknown>, [key, value]) => {
+  const newKey = key.replace('src/', '').replace(/\.ts$/, '.js');
+  acc[newKey] = value;
+  return acc;
+}, {});
+await Bun.write('build/.vite/manifest.json', JSON.stringify(manifest, null, 2));
+
 if (args.values.dev) {
   process.exit(0);
 }

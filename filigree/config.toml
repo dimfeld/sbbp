@@ -22,7 +22,7 @@ dotenv = true
 hosts = ["localhost"]
 
 [web]
-framework = "maud_htmx"
+framework = "htmx"
 
 [formatter]
 js = ["prettierd", "stdin.ts" ]

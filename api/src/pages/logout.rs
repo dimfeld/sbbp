@@ -5,7 +5,7 @@ use axum::{
     routing,
 };
 use filigree::auth::password::{login_with_password, EmailAndPassword};
-use maud::{html, Markup, DOCTYPE};
+use maud::html;
 
 use crate::{
     auth::{has_any_permission, Authed},

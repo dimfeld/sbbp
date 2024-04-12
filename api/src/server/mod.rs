@@ -21,6 +21,7 @@ use tower::ServiceBuilder;
 use tower_http::{
     compression::CompressionLayer,
     cors::CorsLayer,
+    decompression::RequestDecompressionLayer,
     request_id::MakeRequestUuid,
     timeout::TimeoutLayer,
     trace::{DefaultOnFailure, DefaultOnRequest, DefaultOnResponse, TraceLayer},
@@ -154,6 +155,8 @@ pub struct Server {
     /// The server's TCP listener
     pub listener: tokio::net::TcpListener,
     pub queue_workers: crate::jobs::QueueWorkers,
+    /// Vite manifest watcher for replacing web builds at runtime
+    manifest_watcher: Option<filigree::vite_manifest::watch::ManifestWatcher>,
 }
 
 impl Server {
@@ -213,6 +216,13 @@ pub enum ServerBind {
     Listener(tokio::net::TcpListener),
 }
 
+pub struct ServeFrontend {
+    pub port: Option<u16>,
+    pub path: Option<String>,
+    pub vite_manifest: Option<String>,
+    pub watch_vite_manifest: bool,
+}
+
 /// Configuration for the server
 pub struct Config {
     /// The environment we're running in. Currently this just distinguishes between
@@ -221,7 +231,7 @@ pub struct Config {
     /// The host and port to bind to, or an existing TCP listener
     pub bind: ServerBind,
     /// The port and disk asset location of the frontend server.
-    pub serve_frontend: (Option<u16>, Option<String>),
+    pub serve_frontend: ServeFrontend,
     /// True if the site is being hosted on plain HTTP. This should only be set in a development
     /// or testing environment.
     pub insecure: bool,
@@ -354,9 +364,24 @@ pub async fn create_server(config: Config) -> Result<Server, Report<Error>> {
 
     let app = Router::new().nest("/api", api_routes).merge(web_routes);
 
-    let (mut web_port, mut web_dir) = config.serve_frontend;
+    let ServeFrontend {
+        port: mut web_port,
+        path: mut web_dir,
+        vite_manifest,
+        watch_vite_manifest,
+    } = config.serve_frontend;
     web_port = web_port.filter(|p| *p != 0);
     web_dir = web_dir.filter(|p| !p.is_empty());
+
+    let manifest_watcher = if let Some(vite_manifest) = vite_manifest {
+        crate::pages::layout::init_manifest(
+            std::path::Path::new(&vite_manifest),
+            watch_vite_manifest,
+        )
+        .change_context(Error::ServerStart)?
+    } else {
+        None
+    };
 
     let app = match (web_port, web_dir) {
         (Some(web_port), Some(web_dir)) => {
@@ -364,15 +389,16 @@ pub async fn create_server(config: Config) -> Result<Server, Report<Error>> {
                 "http://localhost:{web_port}"
             ));
 
-            let serve_fs = tower_http::services::ServeDir::new(web_dir)
+            let serve_fs = tower_http::services::ServeDir::new(&web_dir)
                 .precompressed_gzip()
                 .precompressed_br()
                 // Pass non-GET methods to the fallback instead of returning 405
                 .call_fallback_on_method_not_allowed(true)
                 .fallback(fallback.clone());
 
-            app.route_service("/", fallback)
-                .route_service("/*path", serve_fs)
+            app.merge(filigree::route_services::serve_immutable_files(&web_dir))
+                .route_service("/", fallback)
+                .fallback_service(serve_fs)
         }
         (Some(web_port), None) => {
             let fallback = filigree::route_services::ForwardRequest::new(format!(
@@ -382,12 +408,14 @@ pub async fn create_server(config: Config) -> Result<Server, Report<Error>> {
             app.fallback_service(fallback)
         }
         (None, Some(web_dir)) => {
-            let serve_fs = tower_http::services::ServeDir::new(web_dir)
+            let serve_fs = tower_http::services::ServeDir::new(&web_dir)
                 .precompressed_gzip()
                 .precompressed_br()
                 .append_index_html_on_directories(true)
                 .fallback(crate::pages::not_found::not_found_fallback.with_state(state.clone()));
-            app.fallback_service(serve_fs)
+
+            app.merge(filigree::route_services::serve_immutable_files(&web_dir))
+                .fallback_service(serve_fs)
         }
         (None, None) => app,
     };
@@ -425,7 +453,6 @@ pub async fn create_server(config: Config) -> Result<Server, Report<Error>> {
             .set_x_request_id(MakeRequestUuid)
             .propagate_x_request_id()
             .layer(CompressionLayer::new())
-            .decompression()
             .layer(filigree::auth::middleware::AuthLayer::new(auth_queries))
             .into_inner(),
     );
@@ -446,6 +473,7 @@ pub async fn create_server(config: Config) -> Result<Server, Report<Error>> {
         app,
         state,
         listener,
+        manifest_watcher,
         queue_workers,
     })
 }

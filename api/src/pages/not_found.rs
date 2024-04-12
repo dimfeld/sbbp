@@ -12,7 +12,7 @@ pub async fn not_found_fallback() -> Response {
 /// Render the not found page from any context.
 pub fn not_found_page() -> Response {
     let body = html! {
-        p { "Couldn't find this page"}
+        p { "Couldn't find this page" }
     };
 
     (

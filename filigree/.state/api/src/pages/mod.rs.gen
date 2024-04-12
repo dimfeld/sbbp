@@ -6,7 +6,7 @@ use axum::{
     routing,
 };
 use filigree::extract::ValidatedForm;
-use maud::{html, Markup, DOCTYPE};
+use maud::html;
 use schemars::JsonSchema;
 
 use crate::{
@@ -21,7 +21,7 @@ mod docs;
 mod error;
 mod forgot;
 mod generic_error;
-mod layout;
+pub mod layout;
 mod login;
 mod logout;
 pub mod not_found;

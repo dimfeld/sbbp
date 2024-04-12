@@ -6,7 +6,7 @@ use axum::{
     routing,
 };
 use filigree::extract::ValidatedForm;
-use maud::{html, Markup, DOCTYPE};
+use maud::html;
 use schemars::JsonSchema;
 
 use crate::{
@@ -21,7 +21,7 @@ mod docs;
 mod error;
 mod forgot;
 mod generic_error;
-mod layout;
+pub mod layout;
 mod login;
 mod logout;
 pub mod not_found;
@@ -87,17 +87,22 @@ async fn home_page(
     auth: Authed,
 ) -> Result<impl IntoResponse, HtmlError> {
     let body = html! {
-        main ."relative p-4 flex flex-col gap-4" {
-            form ."flex flex-col gap-2 rounded-lg border border-border p-4"
-                method="POST"
-                action="_action/add_video" {
-                    label ."flex gap-2 flex-1 max-w-[100ch] text-base" for="path" { "Add new video "}
-                    div .flex .gap-2 {
-                        input #path .flex-1 type="text" name="url" autocomplete="off" {}
-                        button type="submit" { "Add" }
-                    }
-                }
+    main class="relative p-4 flex flex-col gap-4" x-data="{ unread_only: true }" {
+        form ."flex flex-col gap-2 rounded-lg border border-border p-4" hx-post="_action/add_video" {
+            label ."flex gap-2 flex-1 max-w-[100ch] text-base" for="path" { "Add new video" }
+            div ."flex gap-2" {
+                input #path .flex-1 type="text" name="url" autocomplete="off";
+                button type="submit" { "Add" }
+            }
         }
+
+        div ."flex justify-end gap-2" {
+            div ."flex items-center gap-2" {
+                input #unread-only name="unread-only" type="checkbox" class="toggle" x-model="unread_only";
+                label for="unread-only" { "Unread only" }
+            }
+        }
+    }
     };
 
     Ok(root_layout_page(Some(&auth), "SBBP", body))

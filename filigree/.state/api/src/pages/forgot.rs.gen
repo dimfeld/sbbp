@@ -5,7 +5,7 @@ use axum::{
     routing,
 };
 use filigree::extract::FormOrJson;
-use maud::{html, Markup, DOCTYPE};
+use maud::html;
 use schemars::JsonSchema;
 
 use crate::{
