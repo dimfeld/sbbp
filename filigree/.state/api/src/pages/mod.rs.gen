@@ -6,7 +6,7 @@ use axum::{
     routing,
 };
 use filigree::extract::ValidatedForm;
-use maud::html;
+use maud::{html, Markup};
 use schemars::JsonSchema;
 
 use crate::{
@@ -36,14 +36,22 @@ pub struct AddVideoActionPayload {
     pub url: String,
 }
 
+fn add_video_action_fragment() -> Markup {
+    html! {}
+}
+
 async fn add_video_action(
     State(state): State<ServerState>,
     auth: Authed,
     form: ValidatedForm<AddVideoActionPayload>,
 ) -> Result<impl IntoResponse, Error> {
-    let body = html! {};
+    let body = add_video_action_fragment();
 
     Ok(body)
+}
+
+fn rerun_stage_action_fragment() -> Markup {
+    html! {}
 }
 
 async fn rerun_stage_action(
@@ -51,7 +59,7 @@ async fn rerun_stage_action(
     auth: Authed,
     Path((id, stage)): Path<(crate::models::video::VideoId, String)>,
 ) -> Result<impl IntoResponse, Error> {
-    let body = html! {};
+    let body = rerun_stage_action_fragment();
 
     Ok(body)
 }
@@ -61,15 +69,23 @@ pub struct MarkReadActionPayload {
     pub read: bool,
 }
 
+fn mark_read_action_fragment() -> Markup {
+    html! {}
+}
+
 async fn mark_read_action(
     State(state): State<ServerState>,
     auth: Authed,
     Path(id): Path<crate::models::video::VideoId>,
     form: ValidatedForm<MarkReadActionPayload>,
 ) -> Result<impl IntoResponse, Error> {
-    let body = html! {};
+    let body = mark_read_action_fragment();
 
     Ok(body)
+}
+
+fn get_image_action_fragment() -> Markup {
+    html! {}
 }
 
 async fn get_image_action(
@@ -77,7 +93,7 @@ async fn get_image_action(
     auth: Authed,
     Path(image_id): Path<String>,
 ) -> Result<impl IntoResponse, Error> {
-    let body = html! {};
+    let body = get_image_action_fragment();
 
     Ok(body)
 }
