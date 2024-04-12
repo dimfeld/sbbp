@@ -21,7 +21,6 @@ use tower::ServiceBuilder;
 use tower_http::{
     compression::CompressionLayer,
     cors::CorsLayer,
-    decompression::RequestDecompressionLayer,
     request_id::MakeRequestUuid,
     timeout::TimeoutLayer,
     trace::{DefaultOnFailure, DefaultOnRequest, DefaultOnResponse, TraceLayer},
@@ -221,6 +220,7 @@ pub struct ServeFrontend {
     pub path: Option<String>,
     pub vite_manifest: Option<String>,
     pub watch_vite_manifest: bool,
+    pub livereload: bool,
 }
 
 /// Configuration for the server
@@ -369,19 +369,16 @@ pub async fn create_server(config: Config) -> Result<Server, Report<Error>> {
         path: mut web_dir,
         vite_manifest,
         watch_vite_manifest,
+        livereload,
     } = config.serve_frontend;
+
+    let manifest_path = vite_manifest.as_ref().map(std::path::Path::new);
+    let manifest_watcher =
+        crate::pages::layout::init_page_layout(manifest_path, watch_vite_manifest)
+            .change_context(Error::ServerStart)?;
+
     web_port = web_port.filter(|p| *p != 0);
     web_dir = web_dir.filter(|p| !p.is_empty());
-
-    let manifest_watcher = if let Some(vite_manifest) = vite_manifest {
-        crate::pages::layout::init_manifest(
-            std::path::Path::new(&vite_manifest),
-            watch_vite_manifest,
-        )
-        .change_context(Error::ServerStart)?
-    } else {
-        None
-    };
 
     let app = match (web_port, web_dir) {
         (Some(web_port), Some(web_dir)) => {
@@ -456,6 +453,26 @@ pub async fn create_server(config: Config) -> Result<Server, Report<Error>> {
             .layer(filigree::auth::middleware::AuthLayer::new(auth_queries))
             .into_inner(),
     );
+
+    let app = if livereload {
+        // Attach the livereload status route outside all the middleware so it doesn't generate
+        // traces and logs.
+        use tokio_stream::StreamExt;
+        app.route(
+            "/__livereload_status",
+            axum::routing::get(|| async {
+                let stream = futures::stream::repeat_with(|| {
+                    Ok::<_, std::convert::Infallible>(
+                        axum::response::sse::Event::default().data("live"),
+                    )
+                })
+                .throttle(std::time::Duration::from_secs(30));
+                axum::response::sse::Sse::new(stream)
+            }),
+        )
+    } else {
+        app
+    };
 
     let listener = match config.bind {
         ServerBind::Listener(l) => l,

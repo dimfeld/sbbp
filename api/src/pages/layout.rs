@@ -1,27 +1,24 @@
-use std::{
-    collections::{BTreeMap, HashMap},
-    path::Path,
-    sync::{Arc, OnceLock, RwLock},
-};
+use std::path::Path;
 
-use error_stack::{Report, ResultExt};
 use filigree::vite_manifest::{watch::ManifestWatcher, Manifest, ManifestError};
 use maud::{html, Markup, DOCTYPE};
-use sentry::protocol::Map;
-use serde::Deserialize;
 
-use crate::{auth::Authed, Error};
+use crate::auth::Authed;
 
 pub static MANIFEST: Manifest = Manifest::new();
 
-pub fn init_manifest(
-    manifest_path: &Path,
-    watch: bool,
+pub fn init_page_layout(
+    manifest_path: Option<&Path>,
+    watch_manifest: bool,
 ) -> Result<Option<ManifestWatcher>, error_stack::Report<ManifestError>> {
+    let Some(manifest_path) = manifest_path else {
+        return Ok(None);
+    };
+
     let base_url = "";
     MANIFEST.read_manifest(base_url, manifest_path)?;
 
-    let watcher = if watch {
+    let watcher = if watch_manifest {
         Some(filigree::vite_manifest::watch::watch_manifest(
             base_url.to_string(),
             manifest_path.to_path_buf(),
@@ -46,7 +43,9 @@ pub fn page_wrapper(title: &str, slot: Markup) -> Markup {
                 (client_tags)
                 title { (title) }
             }
-            body { (slot) }
+            body {
+                (slot)
+            }
         }
     }
 }
