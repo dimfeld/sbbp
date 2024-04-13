@@ -8,14 +8,14 @@ const enableLiveReload = !production || process.env.LIVE_RELOAD === 'true';
 
 export default defineConfig({
   build: {
-    outDir: 'build',
+    outDir: 'dist-web',
     assetsDir: '_app/immutable',
     copyPublicDir: true,
     manifest: true,
     minify: production,
     rollupOptions: {
       input: {
-        index: './src/index.ts',
+        index: './client/index.ts',
       },
       output: production
         ? {

@@ -103,10 +103,10 @@ async fn home_page(
     auth: Authed,
 ) -> Result<impl IntoResponse, HtmlError> {
     let body = html! {
-    main ."relative p-4 flex flex-col gap-4" x-data="{ unread_only: true }" {
-        form ."flex flex-col gap-2 rounded-lg border border-border p-4" hx-post="_action/add_video" {
-            label ."flex gap-2 flex-1 max-w-[100ch] text-base" for="path" { "Add a new video" }
-            div ."flex gap-2" {
+    main .relative..p-4.flex.flex-col.gap-4 x-data="{ unread_only: true }" {
+        form .flex.flex-col.gap-2.rounded-lg.border.border-border.p-4 hx-post="_action/add_video" {
+            label .text-red-50.flex.gap-2.flex-1.max-w-[100ch].text-base for="path" { "Add a new video" }
+            div .flex.gap-2 {
                 input #path .flex-1 type="text" name="url" autocomplete="off";
                 button type="submit" { "Add" }
             }

@@ -3,9 +3,8 @@
   "module": "src/index.ts",
   "type": "module",
   "scripts": {
-    "build": "NODE_ENV=${NODE_ENV:-production} bun build.ts",
+    "build": "NODE_ENV=${NODE_ENV:-production} bun build-web.ts",
     "dev": "NODE_ENV=development vite build --mode development --watch",
-    "bundle:watch": "bun build src/index.ts --outdir build --sourcemap external --watch",
     "compress-output": "bun compress_output.ts",
     "tailwind:watch": "tailwindcss -c ./tailwind.config.js -i ./app.postcss -o ./build/style.css --watch"
   },
