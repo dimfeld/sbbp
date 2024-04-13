@@ -46,7 +46,7 @@ export default defineConfig({
 
               for (const key in manifest) {
                 // Remove "src/" prefix and change ts to js
-                const newKey = key.replace(/^src\//, '').replace(/\.ts$/, '.js');
+                const newKey = key.replace(/^client\//, '').replace(/\.ts$/, '.js');
                 modifiedManifest[newKey] = manifest[key];
               }
 
