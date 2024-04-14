@@ -2,6 +2,7 @@ require_auth = true
 
 [[pages]]
 path = "/"
+query.unread_only = "?boolean"
 
 [[pages.actions]]
 name = "add_video"

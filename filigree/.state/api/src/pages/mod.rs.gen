@@ -1,6 +1,6 @@
 #[allow(unused_imports)]
 use axum::{
-    extract::{Path, State},
+    extract::{Path, Query, State},
     http::StatusCode,
     response::IntoResponse,
     routing,
@@ -98,9 +98,15 @@ async fn get_image_action(
     Ok(body)
 }
 
+#[derive(serde::Deserialize, serde::Serialize, Debug, JsonSchema)]
+pub struct HomeQuery {
+    pub unread_only: Option<bool>,
+}
+
 async fn home_page(
     State(state): State<ServerState>,
     auth: Authed,
+    Query(qs): Query<HomeQuery>,
 ) -> Result<impl IntoResponse, HtmlError> {
     let body = html! {};
 

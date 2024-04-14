@@ -6,7 +6,7 @@ const config = {
   darkMode: ['class'],
   content: ['./client/**/*.{html,js,svelte,ts}', './api/src/pages/**/*.{rs,js,html,ts}'],
   plugins: [daisyui],
-  safelist: ['dark'],
+  safelist: ['dark', 'fill-current'],
   theme: {
     extend: {
       fontFamily: {

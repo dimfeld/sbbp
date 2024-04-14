@@ -32,6 +32,18 @@ pub enum VideoProcessingState {
     Ready,
 }
 
+impl std::fmt::Display for VideoProcessingState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            VideoProcessingState::Queued => write!(f, "Queued"),
+            VideoProcessingState::Downloading => write!(f, "Downloading"),
+            VideoProcessingState::Downloaded => write!(f, "Downloaded"),
+            VideoProcessingState::Processing => write!(f, "Processing"),
+            VideoProcessingState::Ready => write!(f, "Ready"),
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, schemars::JsonSchema)]
 pub struct VideoChapter {
     start_time: f32,

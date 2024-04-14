@@ -66,6 +66,7 @@ name = "read"
 type = "boolean"
 default_sql = "false"
 indexed = true
+filterable = "exact"
 owner_access = "read_write"
 user_access = "read"
 
