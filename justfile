@@ -12,7 +12,7 @@ prepare:
   @just sync-types
 
 dev-api:
-  cd api && cargo watch -s 'cargo run --release -- serve'
+  cd api && cargo watch -d 0.1 -x 'lrun serve --dev'
 
 dev-web:
-  cd web && bun run dev
+  cd htmx && bun run dev
