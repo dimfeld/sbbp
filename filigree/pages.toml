@@ -25,11 +25,12 @@ method = "post"
 input.read = "boolean"
 permission = "Video:write"
 
+[[pages]]
+path = "/docs/:doc_id"
+params.doc_id = "crate::models::video::VideoId"
+
 [[pages.actions]]
 name = "get_image"
 path = "image/:image_id"
 method = "get"
 permission = "Video:read"
-
-[[pages]]
-path = "/docs/:docId"

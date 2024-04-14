@@ -1,7 +1,7 @@
 use crate::server::ServerState;
 
-pub mod _docId;
+pub mod _doc_id;
 
 pub fn create_routes() -> axum::Router<ServerState> {
-    axum::Router::new().merge(_docId::create_routes())
+    axum::Router::new().merge(_doc_id::create_routes())
 }

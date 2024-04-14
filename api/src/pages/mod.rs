@@ -2,20 +2,23 @@ use std::fmt::Write;
 
 #[allow(unused_imports)]
 use axum::{
-    extract::{Path, Query, State},
+    extract::{Path, State},
     http::StatusCode,
     response::IntoResponse,
     routing,
 };
+use axum_extra::extract::{Form, Query};
 use axum_htmx::HxTrigger;
-use error_stack::Report;
+use error_stack::{Report, ResultExt};
 use filigree::{extract::ValidatedForm, maud::Svg};
 use maud::{html, Markup, Render};
 use schemars::JsonSchema;
 
 use crate::{
     auth::{has_any_permission, Authed},
-    models::video::{self, Video, VideoListResultAndPopulatedListResult, VideoProcessingState},
+    models::video::{
+        self, Video, VideoId, VideoListResultAndPopulatedListResult, VideoProcessingState,
+    },
     pages::error::HtmlError,
     server::ServerState,
     Error,
@@ -48,10 +51,10 @@ fn add_video_action_fragment() -> Markup {
 async fn add_video_action(
     State(state): State<ServerState>,
     auth: Authed,
-    form: ValidatedForm<AddVideoActionPayload>,
+    form: Form<AddVideoActionPayload>,
 ) -> Result<impl IntoResponse, Error> {
     let body = add_video_action_fragment();
-
+    // todo
     Ok(body)
 }
 
@@ -65,40 +68,67 @@ async fn rerun_stage_action(
     Path((id, stage)): Path<(crate::models::video::VideoId, String)>,
 ) -> Result<impl IntoResponse, Error> {
     let body = rerun_stage_action_fragment();
-
+    // todo
     Ok(body)
 }
 
 #[derive(serde::Deserialize, serde::Serialize, Debug, JsonSchema)]
 pub struct MarkReadActionPayload {
     pub read: bool,
+    pub unread_only: bool,
 }
 
-fn mark_read_action_fragment() -> Markup {
-    html! {}
+fn mark_read_action_fragment(id: VideoId, read: bool, unread_only: bool) -> Markup {
+    let next_read = !read;
+    let mark_read_icon = Svg::new(if next_read {
+        md_icons::outlined::ICON_MARK_EMAIL_READ
+    } else {
+        md_icons::outlined::ICON_MARK_EMAIL_UNREAD
+    });
+
+    let (target, swap) = if unread_only && next_read {
+        ("closest li", "delete")
+    } else {
+        ("this", "outerHTML")
+    };
+
+    html! {
+        button
+            .btn.btn-circle.btn-outline
+            aria-label={"Mark" (if next_read { "Read" } else { "Unread" }) }
+            hx-post={"_action/videos/" (id) "/mark_read"}
+            hx-swap={(swap)}
+            hx-target={(target)}
+            hx-vals={
+                r#"{"read":"# (next_read)
+                r#","unread_only":"# (unread_only)
+                r#"}"# }
+            type="button"
+        {
+            (mark_read_icon)
+        }
+    }
 }
 
 async fn mark_read_action(
     State(state): State<ServerState>,
     auth: Authed,
     Path(id): Path<crate::models::video::VideoId>,
-    form: ValidatedForm<MarkReadActionPayload>,
+    form: Form<MarkReadActionPayload>,
 ) -> Result<impl IntoResponse, Error> {
-    let body = mark_read_action_fragment();
+    sqlx::query!(
+        "UPDATE videos
+        SET read = $3
+        WHERE id = $1 AND organization_id = $2",
+        id.as_uuid(),
+        auth.organization_id.as_uuid(),
+        form.read
+    )
+    .execute(&state.db)
+    .await
+    .change_context(Error::Db)?;
 
-    Ok(body)
-}
-
-fn get_image_action_fragment() -> Markup {
-    html! {}
-}
-
-async fn get_image_action(
-    State(state): State<ServerState>,
-    auth: Authed,
-    Path(image_id): Path<String>,
-) -> Result<impl IntoResponse, Error> {
-    let body = get_image_action_fragment();
+    let body = mark_read_action_fragment(id, form.read, form.unread_only);
 
     Ok(body)
 }
@@ -119,15 +149,9 @@ impl Render for VideoDuration {
     }
 }
 
-fn video_row_fragment(video: &VideoListResultAndPopulatedListResult) -> Markup {
+fn video_row_fragment(video: &VideoListResultAndPopulatedListResult, unread_only: bool) -> Markup {
     let ready = video.processing_state == VideoProcessingState::Ready;
     let read = video.read;
-
-    let mark_read_icon = Svg::new(if read {
-        md_icons::outlined::ICON_MARK_EMAIL_UNREAD
-    } else {
-        md_icons::outlined::ICON_MARK_EMAIL_READ
-    });
 
     html! {
         li id={"row-" (video.id)} .flex.justify-between {
@@ -143,15 +167,7 @@ fn video_row_fragment(video: &VideoListResultAndPopulatedListResult) -> Markup {
 
             .flex.gap-2.items-center {
                 @if ready {
-                    button
-                        .btn.btn-circle.btn-outline
-                        aria-label={"Mark" (if read { "Unread" } else { "Read" }) }
-                        hx-post={"_action/videos/" (video.id) "/mark_read"}
-                        hx-vals={r#"{"new_read":"# (!read) "}"}
-                        type="button"
-                    {
-                        (mark_read_icon)
-                    }
+                    (mark_read_action_fragment(video.id, read, unread_only))
 
                     /*
 
@@ -201,27 +217,26 @@ async fn video_list(
     .await?;
 
     Ok(html! {
-        section #video-list .flex.flex-col.gap-4 {
-            div .flex.justify-end.gap-2 {
-                a #unread-only .flex.items-center.gap-2
-                    href={"?unread_only=" (!unread_only)}
-                    hx-target="#video-list"
-                    hx-get={"/?unread_only=" (!unread_only)}
-                {
-                    input
-                        #unread-only-switch
-                        name="unread-only"
-                        type="checkbox"
-                        checked[unread_only]
-                        class="toggle";
-                    label for="unread-only" { "Unread only" }
-                }
+        div .flex.justify-end.gap-2 {
+            a #unread-only .flex.items-center.gap-2
+                href={"?unread_only=" (!unread_only)}
+                hx-target="#video-list"
+                hx-push-url="true"
+                hx-get={"/?unread_only=" (!unread_only)}
+            {
+                input
+                    #unread-only-switch
+                    name="unread-only"
+                    type="checkbox"
+                    checked[unread_only]
+                    class="toggle";
+                label for="unread-only" { "Unread only" }
             }
+        }
 
-            ul #videos .flex.flex-col.gap-4 {
-                @for video in videos.iter() {
-                    (video_row_fragment(video))
-                }
+        ul #videos .flex.flex-col.gap-4 {
+            @for video in videos.iter() {
+                (video_row_fragment(video, unread_only))
             }
         }
     })
@@ -259,7 +274,9 @@ async fn home_page(
             }
         }
 
-        (video_list(&state, &auth, unread_only).await?)
+        section #video-list .flex.flex-col.gap-4 {
+            (video_list(&state, &auth, unread_only).await?)
+        }
     }
     };
 
@@ -283,11 +300,6 @@ pub fn create_routes() -> axum::Router<ServerState> {
             "/_action/videos/:id/mark_read",
             routing::post(mark_read_action)
                 .route_layer(has_any_permission(vec!["Video:write", "org_admin"])),
-        )
-        .route(
-            "/_action/image/:image_id",
-            routing::get(get_image_action)
-                .route_layer(has_any_permission(vec!["Video:read", "org_admin"])),
         )
         .merge(login::create_routes())
         .merge(logout::create_routes())

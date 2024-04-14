@@ -1,10 +1,11 @@
 #[allow(unused_imports)]
 use axum::{
-    extract::{Path, Query, State},
+    extract::{Path, State},
     http::StatusCode,
     response::IntoResponse,
     routing,
 };
+use axum_extra::extract::{Form, Query};
 use filigree::extract::ValidatedForm;
 use maud::{html, Markup};
 use schemars::JsonSchema;
@@ -43,7 +44,7 @@ fn add_video_action_fragment() -> Markup {
 async fn add_video_action(
     State(state): State<ServerState>,
     auth: Authed,
-    form: ValidatedForm<AddVideoActionPayload>,
+    form: Form<AddVideoActionPayload>,
 ) -> Result<impl IntoResponse, Error> {
     let body = add_video_action_fragment();
 
@@ -77,23 +78,9 @@ async fn mark_read_action(
     State(state): State<ServerState>,
     auth: Authed,
     Path(id): Path<crate::models::video::VideoId>,
-    form: ValidatedForm<MarkReadActionPayload>,
+    form: Form<MarkReadActionPayload>,
 ) -> Result<impl IntoResponse, Error> {
     let body = mark_read_action_fragment();
-
-    Ok(body)
-}
-
-fn get_image_action_fragment() -> Markup {
-    html! {}
-}
-
-async fn get_image_action(
-    State(state): State<ServerState>,
-    auth: Authed,
-    Path(image_id): Path<String>,
-) -> Result<impl IntoResponse, Error> {
-    let body = get_image_action_fragment();
 
     Ok(body)
 }
@@ -130,11 +117,6 @@ pub fn create_routes() -> axum::Router<ServerState> {
             "/_action/videos/:id/mark_read",
             routing::post(mark_read_action)
                 .route_layer(has_any_permission(vec!["Video:write", "org_admin"])),
-        )
-        .route(
-            "/_action/image/:image_id",
-            routing::get(get_image_action)
-                .route_layer(has_any_permission(vec!["Video:read", "org_admin"])),
         )
         .merge(login::create_routes())
         .merge(logout::create_routes())

@@ -24,7 +24,7 @@ fn get_image_action_fragment() -> Markup {
 async fn get_image_action(
     State(state): State<ServerState>,
     auth: Authed,
-    Path((docId, image_id)): Path<(String, String)>,
+    Path((doc_id, image_id)): Path<(crate::models::video::VideoId, String)>,
 ) -> Result<impl IntoResponse, Error> {
     let body = get_image_action_fragment();
 
@@ -34,7 +34,7 @@ async fn get_image_action(
 async fn docs_page(
     State(state): State<ServerState>,
     auth: Authed,
-    Path(docId): Path<String>,
+    Path(doc_id): Path<crate::models::video::VideoId>,
 ) -> Result<impl IntoResponse, HtmlError> {
     let body = html! {};
 
@@ -43,9 +43,9 @@ async fn docs_page(
 
 pub fn create_routes() -> axum::Router<ServerState> {
     axum::Router::new()
-        .route("/docs/:docId", routing::get(docs_page))
+        .route("/docs/:doc_id", routing::get(docs_page))
         .route(
-            "/docs/:docId/_action/image/:image_id",
+            "/docs/:doc_id/_action/image/:image_id",
             routing::get(get_image_action)
                 .route_layer(has_any_permission(vec!["Video:read", "org_admin"])),
         )
