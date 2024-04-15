@@ -44,7 +44,9 @@ pub fn page_wrapper(title: &str, slot: Markup) -> Markup {
                 (client_tags)
                 title { (title) " | SBBP" }
             }
-            body hx-boost="true" hx-ext="head-support" {
+            body
+                .h-screen.w-full.relative.grid.grid-rows-1
+                hx-boost="true" hx-ext="head-support" {
                 (slot)
             }
         }

@@ -3968,6 +3968,7 @@ dependencies = [
  "hyper 1.2.0",
  "image",
  "image-compare",
+ "itertools 0.12.1",
  "maud",
  "md-icons",
  "percent-encoding",

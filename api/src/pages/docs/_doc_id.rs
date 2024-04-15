@@ -9,11 +9,13 @@ use axum::{
 };
 use axum_extra::extract::{Form, Query};
 use filigree::extract::ValidatedForm;
+use itertools::Itertools;
 use maud::{html, Markup};
 use schemars::JsonSchema;
 
 use crate::{
     auth::{has_any_permission, Authed},
+    models::video::{Video, VideoId},
     pages::{error::HtmlError, layout::root_layout_page},
     server::ServerState,
     Error,
@@ -35,8 +37,60 @@ async fn get_image_action(
 
 struct ImageChunk {
     text: String,
-    start_image_idx: u32,
-    end_image_idx: u32,
+    start_image_idx: u64,
+    end_image_idx: u64,
+}
+
+fn align(video: &Video) -> Vec<ImageChunk> {
+    let Some((images, transcript)) = video.images.as_ref().zip(video.transcript.as_ref()) else {
+        return vec![];
+    };
+
+    let Some(paragraphs) = transcript["results"]["channels"][0]["alternatives"][0]["paragraphs"]
+        ["paragraphs"]
+        .as_array()
+    else {
+        return vec![];
+    };
+
+    let interval = images.interval as f64;
+    let output = paragraphs
+        .into_iter()
+        .filter_map(|p| {
+            let text = p["sentences"]
+                .as_array()?
+                .iter()
+                .filter_map(|s| s["text"].as_str())
+                .join(" ");
+
+            let start_time = p["start"].as_f64().unwrap_or(0.0);
+            let end_time = p["end"].as_f64().unwrap_or(0.0);
+
+            let start_image_idx = ((start_time / interval).ceil() as u64)
+                .max(1)
+                .min(images.max_index as u64);
+            let end_image_idx = ((end_time / interval).floor() as u64)
+                .max(1)
+                .min(images.max_index as u64);
+
+            println!(
+                "{}-{}: {} {} {}",
+                start_time, end_time, start_image_idx, end_image_idx, images.interval
+            );
+
+            Some(ImageChunk {
+                text,
+                start_image_idx,
+                end_image_idx,
+            })
+        })
+        .collect();
+
+    output
+}
+
+fn doc_settings(video_id: VideoId, is_read: bool) -> Markup {
+    html! {}
 }
 
 async fn docs_page(
@@ -45,20 +99,16 @@ async fn docs_page(
     Path(doc_id): Path<crate::models::video::VideoId>,
 ) -> Result<impl IntoResponse, HtmlError> {
     let video = crate::models::video::queries::get(&state.db, &auth, doc_id).await?;
+    let aligned = align(&video);
     let images = video.images.unwrap_or_default();
+    println!("{:?}", images.removed);
     let removed = images.removed.iter().collect::<HashSet<_>>();
-    let aligned: Vec<ImageChunk> = vec![];
 
     let body = html! {
-        div x-data={r##"{"large_image": null, "max_index":"## (images.max_index) "}"} {
-            main .relative.p-4.w-full.overflow-y-auto.flex.flex-col.items-center
-                x-data=r##"{"show_removed": false}"##
-            {
-                label.sticky.w-full.top-0.left-2.z-10 {
-                    input .checkbox type="checkbox"  x-model="show_removed";
-                    "Show removed images"
-                }
+        div .relative.w-full.overflow-y-auto
+            x-data=(format_args!(r##"{{ large_image: null, max_index:{max_index}, show_removed: false }}"##, max_index=images.max_index)) {
 
+            nav .sticky.top-0.w-full.bg-neutral.text-neutral-content.p-4 {
                 header .flex.gap-4.w-full
                     .items-start.justify-start.flex-col
                     ."md:items-center md:justify-between md:flex-row"
@@ -66,13 +116,21 @@ async fn docs_page(
                     h1 .text-3xl {
                         @if let Some(title) = &video.title { (title) }
                     }
-                    // <DocSettings read={video.read} />
+                    (doc_settings(video.id, video.read))
                 }
+
+                label .flex.items-center.gap-2 {
+                    input .checkbox type="checkbox" x-model="show_removed";
+                    "Show removed images"
+                }
+            }
+
+            main flex.flex-col.items-center.p-4 {
 
                 @if let Some(summary) = &video.summary {
                     section {
                         p.text-2xl { "Video Summary" }
-                        p.whitespace-pre-wrap.font-serif.teext-xl.leading-relaxed ."max-w-[90ch]" {
+                        p.whitespace-pre-wrap.font-serif.text-xl.leading-relaxed ."max-w-[90ch]" {
                             (summary)
                         }
                     }
@@ -87,11 +145,11 @@ async fn docs_page(
                                 button
                                     type="button"
                                     x-cloak[removed] x-show=[removed.then_some("show_removed")]
-                                    x-on-click={"large_image = " (idx)}
+                                    "@click"={"large_image = " (idx)}
                                 {
                                     img .object-cover.aspect-video.border .border-red-500[removed]
-                                        src={"/api/videos/" (doc_id) "/image/" (idx)}
-                                        alt={ "Image" (idx)}
+                                        src=(format_args!("/api/videos/{doc_id}/image/{idx}"))
+                                        alt={ "Image " (idx)}
                                         loading="lazy";
                                 }
                             }
@@ -100,20 +158,22 @@ async fn docs_page(
                     }
 
                 }
+
+                (doc_settings(video.id, video.read))
             }
 
             template x-if="large_image" {
                 button
                     type="button"
-                    "@keyup.escape.window"={"large_image = null"}
-                    "@keyup.left.window"={"large_image = Math.max(large_image - 1, 1)"}
-                    "@keyup.right.window"={"large_image = Math.min(large_image + 1, max_index)"}
+                    "@keyup.escape.window"="large_image = null"
+                    "@keyup.left.window"="large_image = Math.max(large_image - 1, 1)"
+                    "@keyup.right.window"="large_image = Math.min(large_image + 1, max_index)"
                     "@click"="large_image = null"
                     class="fixed inset-0 z-50"
                 {
                     img
-                        ":src"={"'/api/videos/" (doc_id) "/image/' + large_image"}
-                        ":alt"="'Image' + large_image";
+                        ":src"=(format_args!("'/api/videos/{doc_id}/image/' + large_image"))
+                        ":alt"="'Image ' + large_image";
                 }
             }
         }

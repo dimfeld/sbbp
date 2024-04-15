@@ -10,7 +10,7 @@ use axum::{
 use axum_extra::extract::{Form, Query};
 use axum_htmx::HxTrigger;
 use error_stack::{Report, ResultExt};
-use filigree::{extract::ValidatedForm, maud::Svg};
+use filigree::{extract::ValidatedForm, html::Svg};
 use maud::{html, Markup, Render};
 use schemars::JsonSchema;
 

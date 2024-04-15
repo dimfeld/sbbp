@@ -32,7 +32,7 @@ export default defineConfig({
             entryFileNames: '_app/immutable/[name]-[hash].js',
           }
         : {
-            assetFileNames: '_app/dev/[name][extname]',
+            assetFileNames: '_app/dev/[name]-[hash][extname]',
             chunkFileNames: '_app/dev/[name]-[hash].js',
             entryFileNames: '_app/dev/[name].js',
         },

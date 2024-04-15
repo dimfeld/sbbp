@@ -9,8 +9,10 @@ use axum_htmx::{HxLocation, HxPushUrl, HxRetarget, HxTarget, HxTrigger};
 use error_stack::ResultExt;
 use filigree::{
     auth::password::{login_with_password, EmailAndPassword},
+    error_reporting::HandleErrorReport,
     errors::HttpError,
     extract::{FormOrJson, ValidatedForm},
+    html::HtmlList,
 };
 use maud::{html, Markup};
 use schemars::JsonSchema;
@@ -40,63 +42,61 @@ async fn login_form(
     HxTrigger(trigger): HxTrigger,
     cookies: tower_cookies::Cookies,
     mut form: ValidatedForm<LoginForm>,
-) -> Result<Response, HtmlError> {
-    if let Some(data) = &form.data {
-        let trigger = trigger.as_deref().unwrap_or_default();
-        let password = data.password.as_deref().unwrap_or_default();
-        if trigger == "passwordless" || (trigger != "login" && password.is_empty()) {
-            let result = filigree::auth::passwordless_email_login::setup_passwordless_login(
-                &state,
-                data.email.clone(),
-            )
-            .await;
+) -> Response {
+    let redirect_to = form.data.as_ref().and_then(|d| d.redirect_to.clone());
 
-            let message = if result.is_err() {
-                "An error occurred. Please try again later."
-            } else {
-                "Check your email for a link to log in."
-            };
+    let Some(data) = &form.data else {
+        // form error
+        return login_page_form(form, "", redirect_to).into_response();
+    };
 
-            let redirect_to = data.redirect_to.clone();
-            return Ok(login_page_form(form, message, redirect_to).into_response());
+    let trigger = trigger.as_deref().unwrap_or_default();
+    let password = data.password.as_deref().unwrap_or_default();
+    let message = if trigger == "passwordless" || (trigger != "login" && password.is_empty()) {
+        let result = filigree::auth::passwordless_email_login::setup_passwordless_login(
+            &state,
+            data.email.clone(),
+        )
+        .await
+        .report_error();
+
+        if result.is_err() {
+            "An error occurred. Please try again later."
         } else {
-            if password.is_empty() {
-                form.errors.add_field("password", "Password is required");
-            }
-
-            let login_result = filigree::auth::password::login_with_password(
-                &state.session_backend,
-                &cookies,
-                EmailAndPassword {
-                    email: data.email.clone(),
-                    password: password.to_string(),
-                },
-            )
-            .await;
-
-            if let Err(e) = login_result {
-                let message = match e.status_code() {
-                    StatusCode::UNAUTHORIZED => "Incorrect email or password",
-                    _ => "An error occurred. Please try again later.",
-                };
-
-                let redirect_to = data.redirect_to.clone();
-                return Ok(login_page_form(form, message, redirect_to).into_response());
-            }
-
-            let redirect_to = data
-                .redirect_to
-                .as_deref()
-                // Don't redirect if it points to some other website
-                .filter(|r| r.starts_with('/'))
-                .unwrap_or("/");
-            let redirect_to = redirect_to.parse().unwrap_or_else(|_| "/".parse().unwrap());
-
-            return Ok((HxLocation::from_uri(redirect_to), StatusCode::OK).into_response());
+            "Check your email for a link to log in."
         }
-    }
+    } else if password.is_empty() {
+        form.errors.add_field("password", "Password is required");
+        ""
+    } else {
+        let login_result = filigree::auth::password::login_with_password(
+            &state.session_backend,
+            &cookies,
+            EmailAndPassword {
+                email: data.email.clone(),
+                password: password.to_string(),
+            },
+        )
+        .await
+        .report_error();
 
-    Ok(login_page_form(form, "", None).into_response())
+        match login_result.status_code() {
+            StatusCode::OK => {
+                let redirect_to = redirect_to
+                    .as_deref()
+                    // Don't redirect if it points to some other website
+                    .filter(|r| r.starts_with('/'))
+                    .unwrap_or("/");
+                let redirect_to = redirect_to.parse().unwrap_or_else(|_| "/".parse().unwrap());
+
+                return (HxLocation::from_uri(redirect_to), StatusCode::OK).into_response();
+            }
+            StatusCode::UNAUTHORIZED => "Incorrect email or password",
+            _ => "An error occurred. Please try again later.",
+        }
+    };
+
+    login_page_form(form, message, redirect_to).into_response()
 }
 
 fn login_page_form(
@@ -106,23 +106,29 @@ fn login_page_form(
 ) -> Markup {
     let redirect_to = redirect_to
         .as_deref()
-        .or_else(|| form["redirect_to"].as_str().clone());
+        .or_else(|| form["redirect_to"].as_str());
 
     html! {
-        @if !message.is_empty() {
-            div .text-red-50 { (message) }
+        ul.text-red-50 {
+            @if !message.is_empty() {
+                li { (message) }
+            }
+
+            @if !errors.messages.is_empty() {
+                (HtmlList::new(&errors.messages))
+            }
         }
 
         input type="hidden" name="redirect_to" value=[redirect_to];
         div.flex.flex-col.gap-2 {
             label .text-red-200 for="email" { "Email" }
             input #email .input.input-bordered required type="email" name="email" value=[form["email"].as_str()];
-            span .text-red-50 { (errors.field("email")) }
+            (errors.field_ul("email", "text-red-50"))
         }
         div.flex.flex-col.gap-2 {
             label for="password" { "Password" }
             input #password .input.input-bordered type="password" name="password" autocomplete="off";
-            span .text-red-50 { (errors.field("password")) }
+            (errors.field_ul("password", "text-red-50"))
         }
         div.flex.gap-4 {
             button #login .btn.btn-primary { "Login" }

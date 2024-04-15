@@ -30,6 +30,7 @@ http = "1.0.0"
 hyper = { version = "1.1.0", features = ["server", "http1", "http2"] }
 image = "0.25.0"
 image-compare = "0.4.0"
+itertools = "0.12.1"
 maud = { version = "0.26.0", features = ["axum"] }
 md-icons = { version = "0.3.2", features = ["maud"] }
 percent-encoding = "2.3.1"
