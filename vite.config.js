@@ -3,13 +3,21 @@ import { defineConfig } from 'vite';
 
 const production = process.env.NODE_ENV === 'production';
 const env = production ? 'production' : 'development';
+console.dir({
+  production,
+  env
+})
 
 const enableLiveReload = !production || process.env.LIVE_RELOAD === 'true';
+
+// In dev mode, don't add hash, and output files to dev directory, and have server return the files with a no-cache
+// header
+
 
 export default defineConfig({
   build: {
     outDir: 'dist-web',
-    assetsDir: '_app/immutable',
+    assetsDir: production ? '_app/immutable' : '_app/dev',
     copyPublicDir: true,
     manifest: true,
     minify: production,
@@ -19,11 +27,15 @@ export default defineConfig({
       },
       output: production
         ? {
-            assetFileNames: '_app/immutable/[name]-[hash].[extname]',
+            assetFileNames: '_app/immutable/[name]-[hash][extname]',
             chunkFileNames: '_app/immutable/[name]-[hash].js',
             entryFileNames: '_app/immutable/[name]-[hash].js',
           }
-        : undefined,
+        : {
+            assetFileNames: '_app/dev/[name][extname]',
+            chunkFileNames: '_app/dev/[name]-[hash].js',
+            entryFileNames: '_app/dev/[name].js',
+        },
     },
   },
   define: {
