@@ -34,6 +34,7 @@ pub fn init_page_layout(
 /// The HTML shell that every page should be wrapped in to enable basic functionality.
 pub fn page_wrapper(title: &str, slot: Markup) -> Markup {
     let client_tags = MANIFEST.index();
+
     html! {
         (DOCTYPE)
         html {
@@ -41,7 +42,7 @@ pub fn page_wrapper(title: &str, slot: Markup) -> Markup {
                 meta charset="utf-8";
                 meta name="viewport" content="width=device-width, initial-scale=1";
                 (client_tags)
-                title { (title) }
+                title { (title) " | SBBP" }
             }
             body hx-boost="true" hx-ext="head-support" {
                 (slot)

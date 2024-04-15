@@ -280,7 +280,7 @@ async fn home_page(
     }
     };
 
-    Ok(root_layout_page(Some(&auth), "SBBP", body))
+    Ok(root_layout_page(Some(&auth), "Home", body))
 }
 
 pub fn create_routes() -> axum::Router<ServerState> {

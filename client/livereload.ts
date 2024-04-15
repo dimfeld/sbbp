@@ -4,8 +4,8 @@ export function startLiveReload() {
   window.startLiveReload = startLiveReload;
   const sse = new EventSource('/__livereload_status');
   sse.onerror = () => {
-    pollForLive();
     sse.close();
+    pollForLive();
   };
 
   let liveReloadActive = true;

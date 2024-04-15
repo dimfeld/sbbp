@@ -41,24 +41,18 @@ async fn login_form(
     cookies: tower_cookies::Cookies,
     mut form: ValidatedForm<LoginForm>,
 ) -> Result<Response, HtmlError> {
-    let passwordless = match trigger.as_deref() {
-        Some("passwordless") => true,
-        _ => false,
-    };
-
     if let Some(data) = &form.data {
-        if passwordless {
+        let trigger = trigger.as_deref().unwrap_or_default();
+        let password = data.password.as_deref().unwrap_or_default();
+        if trigger == "passwordless" || (trigger != "login" && password.is_empty()) {
             let result = filigree::auth::passwordless_email_login::setup_passwordless_login(
                 &state,
                 data.email.clone(),
             )
             .await;
 
-            let message = if let Err(e) = result {
-                match e.status_code() {
-                    StatusCode::UNAUTHORIZED => "Incorrect email or password",
-                    _ => "An error occurred. Please try again later.",
-                }
+            let message = if result.is_err() {
+                "An error occurred. Please try again later."
             } else {
                 "Check your email for a link to log in."
             };
@@ -66,8 +60,6 @@ async fn login_form(
             let redirect_to = data.redirect_to.clone();
             return Ok(login_page_form(form, message, redirect_to).into_response());
         } else {
-            let password = data.password.as_deref().unwrap_or_default();
-
             if password.is_empty() {
                 form.errors.add_field("password", "Password is required");
             }
@@ -95,7 +87,7 @@ async fn login_form(
             let redirect_to = data
                 .redirect_to
                 .as_deref()
-                // Don't redirect if it point to some other website
+                // Don't redirect if it points to some other website
                 .filter(|r| r.starts_with('/'))
                 .unwrap_or("/");
             let redirect_to = redirect_to.parse().unwrap_or_else(|_| "/".parse().unwrap());
