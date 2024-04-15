@@ -148,6 +148,7 @@ async fn docs_page(
                                     "@click"={"large_image = " (idx)}
                                 {
                                     img .object-cover.aspect-video.border .border-red-500[removed]
+                                        width="512"
                                         src=(format_args!("/api/videos/{doc_id}/image/{idx}"))
                                         alt={ "Image " (idx)}
                                         loading="lazy";
