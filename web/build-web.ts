@@ -10,7 +10,7 @@ const args = parseArgs({
   },
 });
 
-await $`rm -rf dist-web/*`.nothrow().quiet();
+await $`rm -rf build/*`.nothrow().quiet();
 
 await $`NODE_ENV=production vite build`;
 
@@ -18,7 +18,7 @@ if (args.values.dev) {
   process.exit(0);
 }
 
-let glob = new Bun.Glob('dist-web/**/*.{js,css,js.map}');
+let glob = new Bun.Glob('build/**/*.{js,css,js.map}');
 let files = Array.from(glob.scanSync());
 
 console.log('Compressing assets...');

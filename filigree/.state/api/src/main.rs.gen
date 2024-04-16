@@ -189,7 +189,7 @@ async fn serve(cmd: ServeCommand) -> Result<(), Report<Error>> {
 
     let frontend_asset_dir = cmd
         .frontend_asset_dir
-        .or_else(|| Some("../web/build".to_string()));
+        .or_else(|| Some("web/build".to_string()));
     let vite_manifest = cmd.vite_manifest.or_else(|| {
         frontend_asset_dir
             .as_ref()

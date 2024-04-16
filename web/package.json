@@ -1,12 +1,11 @@
 {
-  "name": "sbbp-htmx",
+  "name": "sbbp-web",
   "module": "src/index.ts",
+  "private": true,
   "type": "module",
   "scripts": {
     "build": "NODE_ENV=${NODE_ENV:-production} bun build-web.ts",
-    "dev": "NODE_ENV=development vite build --mode development --watch",
-    "compress-output": "bun compress_output.ts",
-    "tailwind:watch": "tailwindcss -c ./tailwind.config.js -i ./app.postcss -o ./build/style.css --watch"
+    "dev": "NODE_ENV=development vite build --mode development --watch"
   },
   "devDependencies": {
     "@types/bun": "latest",

@@ -3,9 +3,6 @@ company_name = "Daniel Imfeld"
 
 default_auth_scope = "model"
 
-api_dir = "api"
-web_dir = "web"
-
 [error_reporting]
 provider = "sentry"
 

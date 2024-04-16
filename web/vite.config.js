@@ -8,7 +8,7 @@ const enableLiveReload = !production || process.env.LIVE_RELOAD === 'true';
 
 export default defineConfig({
   build: {
-    outDir: 'dist-web',
+    outDir: 'build',
     sourcemap: true,
     assetsDir: production ? '_app/immutable' : '_app/dev',
     copyPublicDir: true,
@@ -16,7 +16,7 @@ export default defineConfig({
     minify: production,
     rollupOptions: {
       input: {
-        index: './web/index.ts',
+        index: './src/index.ts',
       },
       output: production
         ? {
@@ -28,7 +28,7 @@ export default defineConfig({
             assetFileNames: '_app/dev/[name]-[hash][extname]',
             chunkFileNames: '_app/dev/[name]-[hash].js',
             entryFileNames: '_app/dev/[name].js',
-        },
+          },
     },
   },
   define: {
@@ -50,8 +50,8 @@ export default defineConfig({
               const modifiedManifest = {};
 
               for (const key in manifest) {
-                // Remove "web/" prefix and change ts to js
-                const newKey = key.replace(/^web\//, '').replace(/\.ts$/, '.js');
+                // Remove "src/" prefix and change ts to js
+                const newKey = key.replace(/^src\//, '').replace(/\.ts$/, '.js');
                 modifiedManifest[newKey] = manifest[key];
               }
 
