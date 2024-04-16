@@ -96,11 +96,6 @@ fn align(video: &Video) -> Vec<ImageChunk> {
                 .max(1)
                 .min(images.max_index as u64);
 
-            println!(
-                "{}-{}: {} {} {}",
-                start_time, end_time, start_image_idx, end_image_idx, images.interval
-            );
-
             Some(ImageChunk {
                 text,
                 start_image_idx,
@@ -199,7 +194,7 @@ async fn docs_page(
                     class="fixed inset-0 z-50"
                 {
                     img
-                        ":src"=(format_args!("'/api/videos/{doc_id}/image/' + large_image"))
+                        ":src"="'/api/videos/{doc_id}/image/' + large_image"
                         ":alt"="'Image ' + large_image";
                 }
             }

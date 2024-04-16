@@ -4,10 +4,10 @@ use std::{borrow::Cow, str::FromStr};
 use axum::{
     extract::{Path, State},
     http::StatusCode,
-    response::IntoResponse,
+    response::{IntoResponse, Response},
     routing,
 };
-use axum_extra::extract::Query;
+use axum_extra::{extract::Query, headers::ContentType};
 use axum_jsonschema::Json;
 use error_stack::{Report, ResultExt};
 use filigree::{
@@ -268,7 +268,10 @@ async fn get_image(
         .await
         .change_context(Error::Storage)?;
 
-    Ok(response)
+    Ok(Response::builder()
+        .header("Content-Type", "image/webp")
+        .body(response)
+        .unwrap())
 }
 
 #[derive(serde::Deserialize, serde::Serialize, Debug, JsonSchema)]
@@ -344,7 +347,7 @@ pub fn create_routes() -> axum::Router<ServerState> {
             ])),
         )
         .route(
-            "/videos/:id/thumbnail",
+            "/videos/:id/thumbnail.webp",
             routing::get(get_thumbnail).route_layer(has_any_permission(vec![
                 READ_PERMISSION,
                 WRITE_PERMISSION,
