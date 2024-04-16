@@ -16,7 +16,7 @@ export default defineConfig({
     minify: production,
     rollupOptions: {
       input: {
-        index: './client/index.ts',
+        index: './web/index.ts',
       },
       output: production
         ? {
@@ -50,8 +50,8 @@ export default defineConfig({
               const modifiedManifest = {};
 
               for (const key in manifest) {
-                // Remove "src/" prefix and change ts to js
-                const newKey = key.replace(/^client\//, '').replace(/\.ts$/, '.js');
+                // Remove "web/" prefix and change ts to js
+                const newKey = key.replace(/^web\//, '').replace(/\.ts$/, '.js');
                 modifiedManifest[newKey] = manifest[key];
               }
 

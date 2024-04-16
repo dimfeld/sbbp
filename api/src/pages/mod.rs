@@ -333,7 +333,7 @@ async fn home_page(
             hx-target="#videos"
             hx-swap="afterbegin"
             // Clear the text field
-            "hx-on:htmx:after-on-load"="this.path.value = ''"
+            "hx-on:htmx:after-on-load"="this.reset()"
         {
             label .label-text.flex.gap-2.flex-1.text-base for="path" { "Add a new video" }
             div .flex.gap-4 {
