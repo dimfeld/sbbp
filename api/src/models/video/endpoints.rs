@@ -136,83 +136,8 @@ async fn rerun_stage(
     State(state): State<ServerState>,
     auth: Authed,
     Path((id, stage)): Path<(VideoId, String)>,
-    // FormOrJson(payload): FormOrJson<RerunStagePayload>,
 ) -> Result<impl IntoResponse, Error> {
-    let video = queries::get(&state.db, &auth, id).await?;
-    let storage_prefix = video.id.to_string();
-
-    let result = match stage.as_str() {
-        "download" => {
-            let url = video
-                .url
-                .ok_or(Error::NotFound("Video URL"))
-                .attach_printable("Missing URL")?;
-            crate::jobs::download::enqueue(
-                &state,
-                id,
-                &DownloadJobPayload {
-                    id: video.id,
-                    storage_prefix,
-                    download_url: url,
-                },
-            )
-            .await
-        }
-        "extract" => {
-            let video_filename = video
-                .metadata
-                .as_ref()
-                .and_then(|m| m.download.as_ref())
-                .and_then(|d| d.filename.as_ref())
-                .map(|s| s.to_string())
-                .ok_or(Error::NotFound("Video not downloaded yet"))?;
-            crate::jobs::extract::enqueue(
-                &state,
-                id,
-                &ExtractJobPayload {
-                    id,
-                    storage_prefix,
-                    video_filename,
-                },
-            )
-            .await
-        }
-        "analyze" => {
-            let max_index = video
-                .images
-                .map(|i| i.max_index)
-                .ok_or(Error::NotFound("Video not extracted yet"))?;
-            crate::jobs::analyze::enqueue(
-                &state,
-                id,
-                &AnalyzeJobPayload {
-                    id,
-                    storage_prefix,
-                    max_index,
-                },
-            )
-            .await
-        }
-        "transcribe" => {
-            crate::jobs::transcribe::enqueue(
-                &state,
-                id,
-                &TranscribeJobPayload {
-                    id,
-                    audio_path: format!("{storage_prefix}/audio.mp4"),
-                    storage_prefix,
-                },
-            )
-            .await
-        }
-        "summarize" => {
-            crate::jobs::summarize::enqueue(&state, id, &SummarizeJobPayload { id }).await
-        }
-        _ => return Err(Error::NotFound("Unknown stage")),
-    };
-
-    let job_id = result.change_context(Error::TaskQueue)?;
-
+    let job_id = super::rerun_stage(&state, &auth, id, &stage).await?;
     let output = RerunStageResponse { job_id };
 
     Ok(Json(output))

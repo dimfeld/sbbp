@@ -100,7 +100,7 @@ async fn rerun_stage_action(
     auth: Authed,
     Path((id, stage)): Path<(crate::models::video::VideoId, String)>,
 ) -> Result<impl IntoResponse, Error> {
-    // TODO run the action
+    crate::models::video::rerun_stage(&state, &auth, id, &stage).await?;
     Ok(Redirect::to(&format!("/_action/videos/{id}")))
 }
 
@@ -177,6 +177,7 @@ fn reprocess_button(id: VideoId, label: &str, stage: &str) -> Markup {
     html! {
         li {
             button flex.gap-2.justify-start
+                type="button"
                 hx-post={"/_action/videos/" (id) "/rerun/" (stage)}
                 hx-target={"#row-" (id)}
                 hx-swap="outerHTML"
@@ -239,6 +240,7 @@ fn video_row_fragment(video: &VideoListResult, unread_only: bool) -> Markup {
 
                             li {
                                 button flex.gap-2.justify-start
+                                    type="button"
                                     hx-delete={"/_action/videos/" (video.id)}
                                     hx-target={"#row-" (video.id)}
                                     hx-swap="delete"
@@ -331,7 +333,7 @@ async fn home_page(
             hx-target="#videos"
             hx-swap="afterbegin"
             // Clear the text field
-            "hx-on:htmx:after-on-load"="$event.detail.elt.value = ''"
+            "hx-on:htmx:after-on-load"="this.path.value = ''"
         {
             label .label-text.flex.gap-2.flex-1.text-base for="path" { "Add a new video" }
             div .flex.gap-4 {
