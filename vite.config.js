@@ -17,6 +17,7 @@ const enableLiveReload = !production || process.env.LIVE_RELOAD === 'true';
 export default defineConfig({
   build: {
     outDir: 'dist-web',
+    sourcemap: true,
     assetsDir: production ? '_app/immutable' : '_app/dev',
     copyPublicDir: true,
     manifest: true,
