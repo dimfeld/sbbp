@@ -14,6 +14,9 @@ const config = {
       },
     },
   },
+  daisyui: {
+    logs: false,
+  }
 };
 
 export default config;

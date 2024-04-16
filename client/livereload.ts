@@ -1,4 +1,4 @@
-import htmx from 'htmx.org';
+import htmx from './htmx.js';
 
 export function startLiveReload() {
   window.startLiveReload = startLiveReload;
