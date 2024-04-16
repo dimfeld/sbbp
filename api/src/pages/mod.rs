@@ -1,5 +1,6 @@
 use std::fmt::Write;
 
+use axum::response::{Redirect, Response};
 #[allow(unused_imports)]
 use axum::{
     extract::{Path, State},
@@ -85,8 +86,13 @@ async fn video_status_action(
     Ok(body)
 }
 
-fn rerun_stage_action_fragment() -> Markup {
-    html! {}
+async fn delete_video_action(
+    State(state): State<ServerState>,
+    auth: Authed,
+    Path(id): Path<VideoId>,
+) -> Result<impl IntoResponse, Error> {
+    video::queries::delete(&state.db, &auth, id).await?;
+    Ok("")
 }
 
 async fn rerun_stage_action(
@@ -94,9 +100,8 @@ async fn rerun_stage_action(
     auth: Authed,
     Path((id, stage)): Path<(crate::models::video::VideoId, String)>,
 ) -> Result<impl IntoResponse, Error> {
-    let body = rerun_stage_action_fragment();
-    // todo
-    Ok(body)
+    // TODO run the action
+    Ok(Redirect::to(&format!("/_action/videos/{id}")))
 }
 
 #[derive(serde::Deserialize, serde::Serialize, Debug, JsonSchema)]
@@ -126,8 +131,8 @@ fn mark_read_action_fragment(id: VideoId, read: bool, unread_only: bool) -> Mark
             .btn.btn-circle.btn-outline
             aria-label={"Mark" (if next_read { "Read" } else { "Unread" }) }
             hx-post={"_action/mark_read/" (id)}
-            hx-swap={(swap)}
-            hx-target={(target)}
+            hx-swap=(swap)
+            hx-target=(target)
             hx-vals={
                 r#"{"read":"# (next_read)
                 r#","unread_only":"# (unread_only)
@@ -168,6 +173,22 @@ impl Render for VideoDuration {
     }
 }
 
+fn reprocess_button(id: VideoId, label: &str, stage: &str) -> Markup {
+    html! {
+        li {
+            button flex.gap-2.justify-start
+                hx-post={"/_action/videos/" (id) "/rerun/" (stage)}
+                hx-target={"#row-" (id)}
+                hx-swap="outerHTML"
+                "@click"="open = false"
+            {
+                (Svg::new(md_icons::outlined::ICON_REFRESH))
+                (label)
+            }
+        }
+    }
+}
+
 fn video_row_fragment(video: &VideoListResult, unread_only: bool) -> Markup {
     let ready = video.processing_state == VideoProcessingState::Ready;
     let read = video.read;
@@ -177,7 +198,7 @@ fn video_row_fragment(video: &VideoListResult, unread_only: bool) -> Markup {
     html! {
         li id={"row-" (video.id)}
             .flex.justify-between
-            hx-get={"_action/video_status/" (video.id)}
+            hx-get={"_action/videos/" (video.id)}
             hx-trigger=(trigger)
             hx-swap="outerHTML"
         {
@@ -195,30 +216,40 @@ fn video_row_fragment(video: &VideoListResult, unread_only: bool) -> Markup {
                 @if ready {
                     (mark_read_action_fragment(video.id, read, unread_only))
 
-                    /*
+                    div .relative x-data="{ open: false }" {
+                        button .btn.btn-circle.btn-outline
+                            aria-label="Menu"
+                            "@click"="open = !open"
+                        {
+                            (Svg::new(md_icons::outlined::ICON_SETTINGS))
+                        }
 
-                  <Toggle let:on={open} let:toggleOff let:toggle>
-                    <Button variant="outline" icon={settingsIcon} on:click={toggle} />
-                    <Menu {open} explicitClose on:close={toggleOff} let:close>
-                      <p class="px-2 text-sm font-medium pl-6 py-2">Reprocess</p>
-                      <ReprocessForm id={item.id} stage="download" label="Download" {close} />
-                      <ReprocessForm id={item.id} stage="extract" label="Extract" {close} />
-                      <ReprocessForm id={item.id} stage="analyze" label="Analyze" {close} />
-                      <ReprocessForm id={item.id} stage="transcribe" label="Transcribe" {close} />
-                      <ReprocessForm id={item.id} stage="summarize" label="Summarize" {close} />
+                        ul .menu.absolute.right-0.mt-1.bg-base-200.text-base-content.z-50.rounded-lg
+                            x-show="open"
+                            x-cloak
+                            x-transition
+                            "@click.outside"="open = false"
+                        {
+                            p.menu-title { "Reprocess" }
+                            (reprocess_button(video.id, "Download", "download"))
+                            (reprocess_button(video.id, "Extract", "extract"))
+                            (reprocess_button(video.id, "Analyze", "analyze"))
+                            (reprocess_button(video.id, "Transcribe", "transcribe"))
+                            (reprocess_button(video.id, "Summarize", "summarize"))
 
-                      <MenuItem>
-                        <form method="POST" action="?/delete" use:enhance>
-                          <input type="hidden" name="id" value={item.id} />
-                          <button type="submit" on:click={close} class="flex items-center gap-2">
-                            <Icon data={deleteIcon} /> Delete
-                          </button>
-                        </form>
-                      </MenuItem>
-                    </Menu>
-                  </Toggle>
-
-                */
+                            li {
+                                button flex.gap-2.justify-start
+                                    hx-delete={"/_action/videos/" (video.id)}
+                                    hx-target={"#row-" (video.id)}
+                                    hx-swap="delete"
+                                    "@click"="open = false"
+                                {
+                                    (Svg::new(md_icons::outlined::ICON_DELETE))
+                                    "Delete"
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -327,9 +358,14 @@ pub fn create_routes() -> axum::Router<ServerState> {
                 .route_layer(has_any_permission(vec!["Video:write", "org_admin"])),
         )
         .route(
-            "/_action/video_status/:id",
+            "/_action/videos/:id",
             routing::get(video_status_action)
                 .route_layer(has_any_permission(vec!["Video:read", "org_admin"])),
+        )
+        .route(
+            "/_action/videos/:id",
+            routing::delete(delete_video_action)
+                .route_layer(has_any_permission(vec!["Video:write", "org_admin"])),
         )
         .route(
             "/_action/videos/:id/rerun/:stage",
