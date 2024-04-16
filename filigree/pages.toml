@@ -1,0 +1,51 @@
+require_auth = true
+
+[[pages]]
+path = "/"
+query.unread_only = "?boolean"
+
+[[pages.actions]]
+name = "add_video"
+method =  "POST"
+input.url = "string"
+permission = "Video:write"
+
+[[pages.actions]]
+name = "video_status"
+path = "videos/:id"
+params.id = "VideoId"
+method = "GET"
+permission = "Video:read"
+
+[[pages.actions]]
+name = "delete_video"
+path = "videos/:id"
+method = "DELETE"
+permission = "Video:write"
+
+[[pages.actions]]
+name = "rerun_stage"
+path = "videos/:id/rerun/:stage"
+params.id = "crate::models::video::VideoId"
+method = "post"
+permission = "Video:owner"
+
+[[pages.actions]]
+name = "mark_read"
+path = "mark_read/:id"
+params.id = "crate::models::video::VideoId"
+method = "post"
+input.read = "boolean"
+permission = "Video:write"
+
+
+[[pages]]
+path = "/docs/:doc_id"
+params.doc_id = "crate::models::video::VideoId"
+
+[[pages.actions]]
+name = "mark_read"
+path = "mark_read"
+method = "post"
+input.read = "boolean"
+permission = "Video:write"

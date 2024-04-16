@@ -10,7 +10,7 @@ web_dir = "web"
 provider = "sentry"
 
 [tracing]
-provider = "jaeger"
+provider = "otlp_tonic"
 api_service_name = "sbbp-api"
 
 [secrets]
@@ -22,7 +22,7 @@ dotenv = true
 hosts = ["localhost"]
 
 [web]
-framework = "sveltekit"
+framework = "htmx"
 
 [formatter]
 js = ["prettierd", "stdin.ts" ]

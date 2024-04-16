@@ -6,3 +6,5 @@ storage
 queue.db
 .env
 node_modules.tgz
+node_modules
+dist-web

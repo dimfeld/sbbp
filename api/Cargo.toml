@@ -10,8 +10,10 @@ publish = false
 async-trait = "0.1.75"
 axum = { version = "0.7.3", features = ["tokio", "http1", "http2", "macros"] }
 axum-extra = { version = "0.9.2", features = ["query"] }
+axum-htmx = "0.5.0"
 axum-jsonschema = "0.8.0"
 axum-sqlx-tx = { version = "0.8.0", features = ["postgres", "runtime-tokio-rustls"] }
+# axum-sqlx-tx = { version = "0.8.0", features = ["postgres", "runtime-tokio-rustls"] }
 backon = "0.4.3"
 bytes = "1.5.0"
 chrono = "0.4.33"
@@ -28,6 +30,9 @@ http = "1.0.0"
 hyper = { version = "1.1.0", features = ["server", "http1", "http2"] }
 image = "0.25.0"
 image-compare = "0.4.0"
+itertools = "0.12.1"
+maud = { version = "0.26.0", features = ["axum"] }
+md-icons = { version = "0.3.2", features = ["maud"] }
 percent-encoding = "2.3.1"
 reqwest = { version = "0.11.23", features = ["cookies", "json"] }
 rust-embed = "8.1.0"
@@ -48,7 +53,7 @@ tokio = { version = "1.36.0", features = ["full"] }
 tokio-stream = { version = "0.1.15", features = ["fs"] }
 tower = "0.4.13"
 tower-cookies = "0.10.0"
-tower-http = { version = "0.5.1", features = ["full"] }
+tower-http = { version = "0.5.1", features = ["compression-full", "full"] }
 tracing = "0.1.40"
 tracing-subscriber = { version = "0.3.18", features = ["chrono"] }
 url = "2.5.0"
@@ -59,4 +64,19 @@ webp = "0.2.7"
 temp-dir = "0.1.13"
 
 [profile.dev.package.sqlx-macros]
+opt-level = 3
+
+[profile.dev.package.maud_macros]
+opt-level = 3
+
+[profile.dev.package.image]
+opt-level = 3
+
+[profile.dev.package.image-compare]
+opt-level = 3
+
+[profile.dev.package.tokio]
+opt-level = 3
+
+[profile.dev.package.webp]
 opt-level = 3

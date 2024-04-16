@@ -4,10 +4,10 @@ use std::{borrow::Cow, str::FromStr};
 use axum::{
     extract::{Path, State},
     http::StatusCode,
-    response::IntoResponse,
+    response::{IntoResponse, Response},
     routing,
 };
-use axum_extra::extract::Query;
+use axum_extra::{extract::Query, headers::ContentType};
 use axum_jsonschema::Json;
 use error_stack::{Report, ResultExt};
 use filigree::{
@@ -119,34 +119,8 @@ async fn create_via_url(
     auth: Authed,
     FormOrJson(payload): FormOrJson<CreateViaUrlPayload>,
 ) -> Result<impl IntoResponse, Error> {
-    let id = VideoId::new();
-    sqlx::query!(
-        "INSERT INTO videos (id, organization_id, processing_state, url, metadata) VALUES
-        ($1, $2, $3, $4, '{}'::jsonb)",
-        id.as_uuid(),
-        auth.organization_id.as_uuid(),
-        VideoProcessingState::Processing as _,
-        payload.url.as_str()
-    )
-    .execute(&state.db)
-    .await
-    .change_context(Error::Db)?;
-
-    crate::jobs::download::enqueue(
-        &state,
-        id,
-        &crate::jobs::download::DownloadJobPayload {
-            id,
-            download_url: payload.url.to_string(),
-            storage_prefix: id.to_string(),
-        },
-    )
-    .await
-    .change_context(Error::TaskQueue)
-    .attach_printable("Failed to enqueue download job")?;
-
+    let id = super::create_via_url(&state, &auth, &payload.url).await?;
     let output = CreateViaUrlResponse { id };
-
     Ok(Json(output))
 }
 
@@ -162,83 +136,8 @@ async fn rerun_stage(
     State(state): State<ServerState>,
     auth: Authed,
     Path((id, stage)): Path<(VideoId, String)>,
-    // FormOrJson(payload): FormOrJson<RerunStagePayload>,
 ) -> Result<impl IntoResponse, Error> {
-    let video = queries::get(&state.db, &auth, id).await?;
-    let storage_prefix = video.id.to_string();
-
-    let result = match stage.as_str() {
-        "download" => {
-            let url = video
-                .url
-                .ok_or(Error::NotFound("Video URL"))
-                .attach_printable("Missing URL")?;
-            crate::jobs::download::enqueue(
-                &state,
-                id,
-                &DownloadJobPayload {
-                    id: video.id,
-                    storage_prefix,
-                    download_url: url,
-                },
-            )
-            .await
-        }
-        "extract" => {
-            let video_filename = video
-                .metadata
-                .as_ref()
-                .and_then(|m| m.download.as_ref())
-                .and_then(|d| d.filename.as_ref())
-                .map(|s| s.to_string())
-                .ok_or(Error::NotFound("Video not downloaded yet"))?;
-            crate::jobs::extract::enqueue(
-                &state,
-                id,
-                &ExtractJobPayload {
-                    id,
-                    storage_prefix,
-                    video_filename,
-                },
-            )
-            .await
-        }
-        "analyze" => {
-            let max_index = video
-                .images
-                .map(|i| i.max_index)
-                .ok_or(Error::NotFound("Video not extracted yet"))?;
-            crate::jobs::analyze::enqueue(
-                &state,
-                id,
-                &AnalyzeJobPayload {
-                    id,
-                    storage_prefix,
-                    max_index,
-                },
-            )
-            .await
-        }
-        "transcribe" => {
-            crate::jobs::transcribe::enqueue(
-                &state,
-                id,
-                &TranscribeJobPayload {
-                    id,
-                    audio_path: format!("{storage_prefix}/audio.mp4"),
-                    storage_prefix,
-                },
-            )
-            .await
-        }
-        "summarize" => {
-            crate::jobs::summarize::enqueue(&state, id, &SummarizeJobPayload { id }).await
-        }
-        _ => return Err(Error::NotFound("Unknown stage")),
-    };
-
-    let job_id = result.change_context(Error::TaskQueue)?;
-
+    let job_id = super::rerun_stage(&state, &auth, id, &stage).await?;
     let output = RerunStageResponse { job_id };
 
     Ok(Json(output))
@@ -294,7 +193,10 @@ async fn get_image(
         .await
         .change_context(Error::Storage)?;
 
-    Ok(response)
+    Ok(Response::builder()
+        .header("Content-Type", "image/webp")
+        .body(response)
+        .unwrap())
 }
 
 #[derive(serde::Deserialize, serde::Serialize, Debug, JsonSchema)]
@@ -370,7 +272,7 @@ pub fn create_routes() -> axum::Router<ServerState> {
             ])),
         )
         .route(
-            "/videos/:id/thumbnail",
+            "/videos/:id/thumbnail.webp",
             routing::get(get_thumbnail).route_layer(has_any_permission(vec![
                 READ_PERMISSION,
                 WRITE_PERMISSION,

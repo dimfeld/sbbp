@@ -96,7 +96,7 @@ fn parse_order_by(field: &str) -> Result<(bool, OrderByField), OrderByError> {
     Ok((descending, value))
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Default)]
 pub struct ListQueryFilters {
     pub page: Option<u32>,
     pub per_page: Option<u32>,

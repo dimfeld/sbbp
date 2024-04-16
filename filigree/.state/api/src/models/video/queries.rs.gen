@@ -93,7 +93,7 @@ fn parse_order_by(field: &str) -> Result<(bool, OrderByField), OrderByError> {
     Ok((descending, value))
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Default)]
 pub struct ListQueryFilters {
     pub page: Option<u32>,
     pub per_page: Option<u32>,
@@ -101,6 +101,8 @@ pub struct ListQueryFilters {
     pub order_by: Option<String>,
     #[serde(default)]
     pub id: Vec<VideoId>,
+    #[serde(default)]
+    pub read: Option<bool>,
     pub updated_at_lte: Option<chrono::DateTime<chrono::Utc>>,
     pub updated_at_gte: Option<chrono::DateTime<chrono::Utc>>,
     pub created_at_lte: Option<chrono::DateTime<chrono::Utc>>,
@@ -113,6 +115,10 @@ impl ListQueryFilters {
 
         if !self.id.is_empty() {
             bindings.add_vec("id", &self.id);
+        }
+
+        if self.read.is_some() {
+            bindings.add_option("read", &self.read, BindingOperator::Eq);
         }
 
         if self.updated_at_lte.is_some() {
@@ -151,6 +157,11 @@ impl ListQueryFilters {
         if !self.id.is_empty() {
             event!(Level::DEBUG, id = ?self.id);
             query = query.bind(&self.id);
+        }
+
+        if self.read.is_some() {
+            event!(Level::DEBUG, read = ?self.read);
+            query = query.bind(&self.read);
         }
 
         if self.updated_at_lte.is_some() {

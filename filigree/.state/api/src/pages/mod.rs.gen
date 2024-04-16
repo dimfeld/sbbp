@@ -1,0 +1,164 @@
+#[allow(unused_imports)]
+use axum::{
+    extract::{Path, State},
+    http::StatusCode,
+    response::IntoResponse,
+    routing,
+};
+use axum_extra::extract::{Form, Query};
+use filigree::extract::ValidatedForm;
+use maud::{html, Markup};
+use schemars::JsonSchema;
+
+use crate::{
+    auth::{has_any_permission, Authed},
+    pages::error::HtmlError,
+    server::ServerState,
+    Error,
+};
+
+mod auth;
+mod docs;
+mod error;
+mod forgot;
+mod generic_error;
+pub mod layout;
+mod login;
+mod logout;
+pub mod not_found;
+mod reset;
+
+pub use generic_error::*;
+use layout::*;
+pub use not_found::*;
+
+#[derive(serde::Deserialize, serde::Serialize, Debug, JsonSchema)]
+pub struct AddVideoActionPayload {
+    pub url: String,
+}
+
+fn add_video_action_fragment() -> Markup {
+    html! {}
+}
+
+async fn add_video_action(
+    State(state): State<ServerState>,
+    auth: Authed,
+    form: Form<AddVideoActionPayload>,
+) -> Result<impl IntoResponse, Error> {
+    let body = add_video_action_fragment();
+
+    Ok(body)
+}
+
+fn video_status_action_fragment() -> Markup {
+    html! {}
+}
+
+async fn video_status_action(
+    State(state): State<ServerState>,
+    auth: Authed,
+    Path(id): Path<VideoId>,
+) -> Result<impl IntoResponse, Error> {
+    let body = video_status_action_fragment();
+
+    Ok(body)
+}
+
+fn delete_video_action_fragment() -> Markup {
+    html! {}
+}
+
+async fn delete_video_action(
+    State(state): State<ServerState>,
+    auth: Authed,
+    Path(id): Path<String>,
+) -> Result<impl IntoResponse, Error> {
+    let body = delete_video_action_fragment();
+
+    Ok(body)
+}
+
+fn rerun_stage_action_fragment() -> Markup {
+    html! {}
+}
+
+async fn rerun_stage_action(
+    State(state): State<ServerState>,
+    auth: Authed,
+    Path((id, stage)): Path<(crate::models::video::VideoId, String)>,
+) -> Result<impl IntoResponse, Error> {
+    let body = rerun_stage_action_fragment();
+
+    Ok(body)
+}
+
+#[derive(serde::Deserialize, serde::Serialize, Debug, JsonSchema)]
+pub struct MarkReadActionPayload {
+    pub read: bool,
+}
+
+fn mark_read_action_fragment() -> Markup {
+    html! {}
+}
+
+async fn mark_read_action(
+    State(state): State<ServerState>,
+    auth: Authed,
+    Path(id): Path<crate::models::video::VideoId>,
+    form: Form<MarkReadActionPayload>,
+) -> Result<impl IntoResponse, Error> {
+    let body = mark_read_action_fragment();
+
+    Ok(body)
+}
+
+#[derive(serde::Deserialize, serde::Serialize, Debug, JsonSchema)]
+pub struct HomeQuery {
+    pub unread_only: Option<bool>,
+}
+
+async fn home_page(
+    State(state): State<ServerState>,
+    auth: Authed,
+    Query(qs): Query<HomeQuery>,
+) -> Result<impl IntoResponse, HtmlError> {
+    let body = html! {};
+
+    Ok(root_layout_page(Some(&auth), "title", body))
+}
+
+pub fn create_routes() -> axum::Router<ServerState> {
+    axum::Router::new()
+        .route("/", routing::get(home_page))
+        .route(
+            "/_action/add_video",
+            routing::post(add_video_action)
+                .route_layer(has_any_permission(vec!["Video:write", "org_admin"])),
+        )
+        .route(
+            "/_action/videos/:id",
+            routing::get(video_status_action)
+                .route_layer(has_any_permission(vec!["Video:read", "org_admin"])),
+        )
+        .route(
+            "/_action/videos/:id",
+            routing::delete(delete_video_action)
+                .route_layer(has_any_permission(vec!["Video:write", "org_admin"])),
+        )
+        .route(
+            "/_action/videos/:id/rerun/:stage",
+            routing::post(rerun_stage_action)
+                .route_layer(has_any_permission(vec!["Video:owner", "org_admin"])),
+        )
+        .route(
+            "/_action/mark_read/:id",
+            routing::post(mark_read_action)
+                .route_layer(has_any_permission(vec!["Video:write", "org_admin"])),
+        )
+        .merge(login::create_routes())
+        .merge(logout::create_routes())
+        .merge(forgot::create_routes())
+        .merge(reset::create_routes())
+        .merge(docs::create_routes())
+}
