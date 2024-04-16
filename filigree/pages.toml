@@ -11,6 +11,13 @@ input.url = "string"
 permission = "Video:write"
 
 [[pages.actions]]
+name = "video_status"
+path = "video_status/:id"
+params.id = "VideoId"
+method = "GET"
+permission = "Video:read"
+
+[[pages.actions]]
 name = "rerun_stage"
 path = "videos/:id/rerun/:stage"
 params.id = "crate::models::video::VideoId"

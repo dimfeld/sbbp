@@ -44,17 +44,46 @@ pub struct AddVideoActionPayload {
     pub url: String,
 }
 
-fn add_video_action_fragment() -> Markup {
-    html! {}
-}
-
 async fn add_video_action(
     State(state): State<ServerState>,
     auth: Authed,
     form: Form<AddVideoActionPayload>,
 ) -> Result<impl IntoResponse, Error> {
-    let body = add_video_action_fragment();
-    // todo
+    let id = crate::models::video::create_via_url(&state, &auth, &form.url).await?;
+
+    // Hack until filigree supports better model fetching and conversion between types
+    let mut videos = crate::models::video::queries::list(
+        &state.db,
+        &auth,
+        &video::queries::ListQueryFilters {
+            id: vec![id],
+            ..Default::default()
+        },
+    )
+    .await?;
+    let video = videos.pop().ok_or(crate::Error::NotFound("new video"))?;
+
+    let body = video_row_fragment(&video, false);
+    Ok(body)
+}
+
+async fn video_status_action(
+    State(state): State<ServerState>,
+    auth: Authed,
+    Path(id): Path<VideoId>,
+) -> Result<impl IntoResponse, Error> {
+    let mut videos = crate::models::video::queries::list(
+        &state.db,
+        &auth,
+        &video::queries::ListQueryFilters {
+            id: vec![id],
+            ..Default::default()
+        },
+    )
+    .await?;
+    let video = videos.pop().ok_or(crate::Error::NotFound("new video"))?;
+    let body = video_row_fragment(&video, false);
+
     Ok(body)
 }
 
@@ -145,8 +174,15 @@ fn video_row_fragment(video: &VideoListResultAndPopulatedListResult, unread_only
     let ready = video.processing_state == VideoProcessingState::Ready;
     let read = video.read;
 
+    let trigger = if ready { "none" } else { "load delay:5s" };
+
     html! {
-        li id={"row-" (video.id)} .flex.justify-between {
+        li id={"row-" (video.id)}
+            .flex.justify-between
+            hx-get={"_action/video_status/" (video.id)}
+            hx-trigger=(trigger)
+            hx-swap="outerHTML"
+        {
             .flex.flex-col {
                 @if ready {
                     a.underline href={"docs/" (video.id)} { (video.title.as_deref().unwrap_or_default()) }
@@ -260,8 +296,15 @@ async fn home_page(
 
     let body = html! {
     main .relative.p-4.flex.flex-col.gap-4 {
-        form .flex.flex-col.gap-2.rounded-lg.border.border-neutral.p-4 hx-post="_action/add_video" {
-            label .label-text.flex.gap-2.flex-1 ."max-w-[100ch]".text-base for="path" { "Add a new video" }
+        form .flex.flex-col.gap-2.rounded-lg.border.border-neutral.p-4
+            hx-post="/_action/add_video"
+            // This returns a video row so place it at the top of the list
+            hx-target="#videos"
+            hx-swap="afterbegin"
+            // Clear the text field
+            "x-on:htmx:after-on-load"="$event.detail.elt.value = ''"
+        {
+            label .label-text.flex.gap-2.flex-1.text-base for="path" { "Add a new video" }
             div .flex.gap-4 {
                 input #path .flex-1.input.input-bordered type="text" name="url" autocomplete="off";
                 button .btn.btn-outline type="submit" { "Add" }
@@ -284,6 +327,11 @@ pub fn create_routes() -> axum::Router<ServerState> {
             "/_action/add_video",
             routing::post(add_video_action)
                 .route_layer(has_any_permission(vec!["Video:write", "org_admin"])),
+        )
+        .route(
+            "/_action/video_status/:id",
+            routing::get(video_status_action)
+                .route_layer(has_any_permission(vec!["Video:read", "org_admin"])),
         )
         .route(
             "/_action/videos/:id/rerun/:stage",

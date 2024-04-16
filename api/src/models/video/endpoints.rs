@@ -119,34 +119,8 @@ async fn create_via_url(
     auth: Authed,
     FormOrJson(payload): FormOrJson<CreateViaUrlPayload>,
 ) -> Result<impl IntoResponse, Error> {
-    let id = VideoId::new();
-    sqlx::query!(
-        "INSERT INTO videos (id, organization_id, processing_state, url, metadata) VALUES
-        ($1, $2, $3, $4, '{}'::jsonb)",
-        id.as_uuid(),
-        auth.organization_id.as_uuid(),
-        VideoProcessingState::Processing as _,
-        payload.url.as_str()
-    )
-    .execute(&state.db)
-    .await
-    .change_context(Error::Db)?;
-
-    crate::jobs::download::enqueue(
-        &state,
-        id,
-        &crate::jobs::download::DownloadJobPayload {
-            id,
-            download_url: payload.url.to_string(),
-            storage_prefix: id.to_string(),
-        },
-    )
-    .await
-    .change_context(Error::TaskQueue)
-    .attach_printable("Failed to enqueue download job")?;
-
+    let id = super::create_via_url(&state, &auth, &payload.url).await?;
     let output = CreateViaUrlResponse { id };
-
     Ok(Json(output))
 }
 

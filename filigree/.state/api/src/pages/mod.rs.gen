@@ -51,6 +51,20 @@ async fn add_video_action(
     Ok(body)
 }
 
+fn video_status_action_fragment() -> Markup {
+    html! {}
+}
+
+async fn video_status_action(
+    State(state): State<ServerState>,
+    auth: Authed,
+    Path(id): Path<VideoId>,
+) -> Result<impl IntoResponse, Error> {
+    let body = video_status_action_fragment();
+
+    Ok(body)
+}
+
 fn rerun_stage_action_fragment() -> Markup {
     html! {}
 }
@@ -107,6 +121,11 @@ pub fn create_routes() -> axum::Router<ServerState> {
             "/_action/add_video",
             routing::post(add_video_action)
                 .route_layer(has_any_permission(vec!["Video:write", "org_admin"])),
+        )
+        .route(
+            "/_action/video_status/:id",
+            routing::get(video_status_action)
+                .route_layer(has_any_permission(vec!["Video:read", "org_admin"])),
         )
         .route(
             "/_action/videos/:id/rerun/:stage",
