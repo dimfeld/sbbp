@@ -18,7 +18,7 @@ if (args.values.dev) {
   process.exit(0);
 }
 
-let glob = new Bun.Glob('dist-web/**/*.{js,css}');
+let glob = new Bun.Glob('dist-web/**/*.{js,css,js.map}');
 let files = Array.from(glob.scanSync());
 
 console.log('Compressing assets...');

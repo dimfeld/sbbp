@@ -3,16 +3,8 @@ import { defineConfig } from 'vite';
 
 const production = process.env.NODE_ENV === 'production';
 const env = production ? 'production' : 'development';
-console.dir({
-  production,
-  env
-})
 
 const enableLiveReload = !production || process.env.LIVE_RELOAD === 'true';
-
-// In dev mode, don't add hash, and output files to dev directory, and have server return the files with a no-cache
-// header
-
 
 export default defineConfig({
   build: {
