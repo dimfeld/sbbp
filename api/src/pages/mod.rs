@@ -16,9 +16,7 @@ use schemars::JsonSchema;
 
 use crate::{
     auth::{has_any_permission, Authed},
-    models::video::{
-        self, Video, VideoId, VideoListResultAndPopulatedListResult, VideoProcessingState,
-    },
+    models::video::{self, Video, VideoId, VideoListResult, VideoProcessingState},
     pages::error::HtmlError,
     server::ServerState,
     Error,
@@ -109,9 +107,9 @@ pub struct MarkReadActionPayload {
 
 pub fn mark_read_icon(read: bool) -> Svg<'static, 'static> {
     Svg::new(if read {
-        md_icons::outlined::ICON_MARK_EMAIL_READ
+        md_icons::outlined::ICON_EMAIL
     } else {
-        md_icons::outlined::ICON_MARK_EMAIL_UNREAD
+        md_icons::outlined::ICON_DRAFTS
     })
 }
 
@@ -170,7 +168,7 @@ impl Render for VideoDuration {
     }
 }
 
-fn video_row_fragment(video: &VideoListResultAndPopulatedListResult, unread_only: bool) -> Markup {
+fn video_row_fragment(video: &VideoListResult, unread_only: bool) -> Markup {
     let ready = video.processing_state == VideoProcessingState::Ready;
     let read = video.read;
 
@@ -302,7 +300,7 @@ async fn home_page(
             hx-target="#videos"
             hx-swap="afterbegin"
             // Clear the text field
-            "x-on:htmx:after-on-load"="$event.detail.elt.value = ''"
+            "hx-on:htmx:after-on-load"="$event.detail.elt.value = ''"
         {
             label .label-text.flex.gap-2.flex-1.text-base for="path" { "Add a new video" }
             div .flex.gap-4 {

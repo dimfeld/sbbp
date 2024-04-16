@@ -282,7 +282,7 @@ impl Default for VideoCreatePayloadAndUpdatePayload {
 
 #[derive(Deserialize, Debug, Clone, schemars::JsonSchema, sqlx::FromRow)]
 
-pub struct VideoListResultAndPopulatedListResult {
+pub struct VideoListResult {
     pub id: VideoId,
     pub organization_id: crate::models::organization::OrganizationId,
     pub updated_at: chrono::DateTime<chrono::Utc>,
@@ -301,11 +301,9 @@ pub struct VideoListResultAndPopulatedListResult {
     pub _permission: ObjectPermission,
 }
 
-pub type VideoListResult = VideoListResultAndPopulatedListResult;
+pub type VideoPopulatedListResult = VideoListResult;
 
-pub type VideoPopulatedListResult = VideoListResultAndPopulatedListResult;
-
-impl VideoListResultAndPopulatedListResult {
+impl VideoListResult {
     // The <T as Default> syntax here is weird but lets us generate from the template without needing to
     // detect whether to add the extra :: in cases like DateTime::<Utc>::default
 
@@ -370,9 +368,9 @@ impl VideoListResultAndPopulatedListResult {
     }
 }
 
-sqlx_json_decode!(VideoListResultAndPopulatedListResult);
+sqlx_json_decode!(VideoListResult);
 
-impl Default for VideoListResultAndPopulatedListResult {
+impl Default for VideoListResult {
     fn default() -> Self {
         Self {
             id: Self::default_id(),
@@ -395,12 +393,12 @@ impl Default for VideoListResultAndPopulatedListResult {
     }
 }
 
-impl Serialize for VideoListResultAndPopulatedListResult {
+impl Serialize for VideoListResult {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
-        let mut state = serializer.serialize_struct("VideoListResultAndPopulatedListResult", 16)?;
+        let mut state = serializer.serialize_struct("VideoListResult", 16)?;
         state.serialize_field("id", &self.id)?;
         state.serialize_field("organization_id", &self.organization_id)?;
         state.serialize_field("updated_at", &self.updated_at)?;

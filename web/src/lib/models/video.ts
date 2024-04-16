@@ -48,7 +48,7 @@ export type VideoCreatePayload = VideoCreatePayloadAndUpdatePayload;
 export const VideoUpdatePayloadSchema = VideoCreatePayloadAndUpdatePayloadSchema;
 export type VideoUpdatePayload = VideoCreatePayloadAndUpdatePayload;
 
-export const VideoListResultAndPopulatedListResultSchema = z.object({
+export const VideoListResultSchema = z.object({
   id: z.string(),
   organization_id: z.string(),
   updated_at: z.string().datetime(),
@@ -67,13 +67,9 @@ export const VideoListResultAndPopulatedListResultSchema = z.object({
   _permission: ObjectPermission,
 });
 
-export type VideoListResultAndPopulatedListResult = z.infer<
-  typeof VideoListResultAndPopulatedListResultSchema
->;
-export const VideoListResultSchema = VideoListResultAndPopulatedListResultSchema;
-export type VideoListResult = VideoListResultAndPopulatedListResult;
-export const VideoPopulatedListResultSchema = VideoListResultAndPopulatedListResultSchema;
-export type VideoPopulatedListResult = VideoListResultAndPopulatedListResult;
+export type VideoListResult = z.infer<typeof VideoListResultSchema>;
+export const VideoPopulatedListResultSchema = VideoListResultSchema;
+export type VideoPopulatedListResult = VideoListResult;
 
 export const baseUrl = 'videos';
 export const urlWithId = (id: string) => `${baseUrl}/${id}`;

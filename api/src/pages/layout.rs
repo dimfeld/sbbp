@@ -46,7 +46,9 @@ pub fn page_wrapper(title: &str, slot: Markup) -> Markup {
             }
             body
                 .h-screen.w-full.relative.grid.grid-rows-1
-                hx-boost="true" hx-ext="head-support" {
+                hx-boost="true"
+                hx-ext="alpine-morph,head-support"
+            {
                 (slot)
             }
         }
