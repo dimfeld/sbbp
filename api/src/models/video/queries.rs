@@ -336,3 +336,25 @@ pub async fn lookup_object_permissions(
     let perm = result.and_then(|r| ObjectPermission::from_str_infallible(&r));
     Ok(perm)
 }
+
+#[instrument(skip(db))]
+pub async fn mark_read(
+    db: impl PgExecutor<'_>,
+    auth: &AuthInfo,
+    id: VideoId,
+    read: bool,
+) -> Result<(), error_stack::Report<Error>> {
+    sqlx::query!(
+        "UPDATE videos
+        SET read = $3
+        WHERE id = $1 AND organization_id = $2",
+        id.as_uuid(),
+        auth.organization_id.as_uuid(),
+        read
+    )
+    .execute(db)
+    .await
+    .change_context(Error::Db)?;
+
+    Ok(())
+}

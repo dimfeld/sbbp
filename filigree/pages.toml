@@ -19,7 +19,7 @@ permission = "Video:owner"
 
 [[pages.actions]]
 name = "mark_read"
-path = "videos/:id/mark_read"
+path = "mark_read/:id"
 params.id = "crate::models::video::VideoId"
 method = "post"
 input.read = "boolean"
@@ -30,7 +30,8 @@ path = "/docs/:doc_id"
 params.doc_id = "crate::models::video::VideoId"
 
 [[pages.actions]]
-name = "get_image"
-path = "image/:image_id"
-method = "get"
-permission = "Video:read"
+name = "mark_read"
+path = "mark_read"
+method = "post"
+input.read = "boolean"
+permission = "Video:write"

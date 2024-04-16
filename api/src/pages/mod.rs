@@ -78,14 +78,16 @@ pub struct MarkReadActionPayload {
     pub unread_only: bool,
 }
 
-fn mark_read_action_fragment(id: VideoId, read: bool, unread_only: bool) -> Markup {
-    let next_read = !read;
-    let mark_read_icon = Svg::new(if next_read {
+pub fn mark_read_icon(read: bool) -> Svg<'static, 'static> {
+    Svg::new(if read {
         md_icons::outlined::ICON_MARK_EMAIL_READ
     } else {
         md_icons::outlined::ICON_MARK_EMAIL_UNREAD
-    });
+    })
+}
 
+fn mark_read_action_fragment(id: VideoId, read: bool, unread_only: bool) -> Markup {
+    let next_read = !read;
     let (target, swap) = if unread_only && next_read {
         ("closest li", "delete")
     } else {
@@ -96,7 +98,7 @@ fn mark_read_action_fragment(id: VideoId, read: bool, unread_only: bool) -> Mark
         button
             .btn.btn-circle.btn-outline
             aria-label={"Mark" (if next_read { "Read" } else { "Unread" }) }
-            hx-post={"_action/videos/" (id) "/mark_read"}
+            hx-post={"_action/mark_read/" (id)}
             hx-swap={(swap)}
             hx-target={(target)}
             hx-vals={
@@ -105,7 +107,7 @@ fn mark_read_action_fragment(id: VideoId, read: bool, unread_only: bool) -> Mark
                 r#"}"# }
             type="button"
         {
-            (mark_read_icon)
+            (mark_read_icon(next_read))
         }
     }
 }
@@ -116,17 +118,7 @@ async fn mark_read_action(
     Path(id): Path<crate::models::video::VideoId>,
     form: Form<MarkReadActionPayload>,
 ) -> Result<impl IntoResponse, Error> {
-    sqlx::query!(
-        "UPDATE videos
-        SET read = $3
-        WHERE id = $1 AND organization_id = $2",
-        id.as_uuid(),
-        auth.organization_id.as_uuid(),
-        form.read
-    )
-    .execute(&state.db)
-    .await
-    .change_context(Error::Db)?;
+    video::queries::mark_read(&state.db, &auth, id, form.read).await?;
 
     let body = mark_read_action_fragment(id, form.read, form.unread_only);
 
@@ -224,13 +216,15 @@ async fn video_list(
                 hx-push-url="true"
                 hx-get={"/?unread_only=" (!unread_only)}
             {
-                input
-                    #unread-only-switch
-                    name="unread-only"
-                    type="checkbox"
-                    checked[unread_only]
-                    class="toggle";
-                label for="unread-only" { "Unread only" }
+                label.label.gap-2 {
+                    input
+                        #unread-only-switch
+                        name="unread-only"
+                        type="checkbox"
+                        checked[unread_only]
+                        class="toggle";
+                    span.label-text { "Unread only" }
+                }
             }
         }
 
@@ -266,11 +260,11 @@ async fn home_page(
 
     let body = html! {
     main .relative.p-4.flex.flex-col.gap-4 {
-        form .flex.flex-col.gap-2.rounded-lg.border.border-border.p-4 hx-post="_action/add_video" {
-            label .text-red-50.flex.gap-2.flex-1 ."max-w-[100ch]".text-base for="path" { "Add a new video" }
-            div .flex.gap-2 {
-                input #path .flex-1 type="text" name="url" autocomplete="off";
-                button type="submit" { "Add" }
+        form .flex.flex-col.gap-2.rounded-lg.border.border-neutral.p-4 hx-post="_action/add_video" {
+            label .label-text.flex.gap-2.flex-1 ."max-w-[100ch]".text-base for="path" { "Add a new video" }
+            div .flex.gap-4 {
+                input #path .flex-1.input.input-bordered type="text" name="url" autocomplete="off";
+                button .btn.btn-outline type="submit" { "Add" }
             }
         }
 
@@ -297,7 +291,7 @@ pub fn create_routes() -> axum::Router<ServerState> {
                 .route_layer(has_any_permission(vec!["Video:owner", "org_admin"])),
         )
         .route(
-            "/_action/videos/:id/mark_read",
+            "/_action/mark_read/:id",
             routing::post(mark_read_action)
                 .route_layer(has_any_permission(vec!["Video:write", "org_admin"])),
         )

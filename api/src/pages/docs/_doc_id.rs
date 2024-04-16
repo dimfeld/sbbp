@@ -8,9 +8,9 @@ use axum::{
     routing,
 };
 use axum_extra::extract::{Form, Query};
-use filigree::extract::ValidatedForm;
+use filigree::{extract::ValidatedForm, html::Svg};
 use itertools::Itertools;
-use maud::{html, Markup};
+use maud::{html, Markup, Render};
 use schemars::JsonSchema;
 
 use crate::{
@@ -21,16 +21,39 @@ use crate::{
     Error,
 };
 
-fn get_image_action_fragment() -> Markup {
-    html! {}
+#[derive(serde::Deserialize, serde::Serialize, Debug, JsonSchema)]
+pub struct MarkReadActionPayload {
+    pub read: bool,
 }
 
-async fn get_image_action(
+fn mark_read_action_fragment(doc_id: VideoId, next_read: bool) -> Markup {
+    let label = if next_read {
+        "Mark as Read"
+    } else {
+        "Mark as Unread"
+    };
+
+    html! {
+    button .btn.btn-circle.btn-outline
+        type="button"
+        aria-label=(label)
+        hx-post={"/docs/" (doc_id) "/_action/mark_read"}
+        hx-swap="outerHTML"
+        hx-vals=(format_args!(r##"{{"read": {next_read} }}"##))
+        {
+            (crate::pages::mark_read_icon(next_read))
+        }
+    }
+}
+
+async fn mark_read_action(
     State(state): State<ServerState>,
     auth: Authed,
-    Path((doc_id, image_id)): Path<(crate::models::video::VideoId, String)>,
+    Path(doc_id): Path<crate::models::video::VideoId>,
+    form: Form<MarkReadActionPayload>,
 ) -> Result<impl IntoResponse, Error> {
-    let body = get_image_action_fragment();
+    crate::models::video::queries::mark_read(&state.db, &auth, doc_id, form.read).await?;
+    let body = mark_read_action_fragment(doc_id, !form.read);
 
     Ok(body)
 }
@@ -89,10 +112,6 @@ fn align(video: &Video) -> Vec<ImageChunk> {
     output
 }
 
-fn doc_settings(video_id: VideoId, is_read: bool) -> Markup {
-    html! {}
-}
-
 async fn docs_page(
     State(state): State<ServerState>,
     auth: Authed,
@@ -101,8 +120,9 @@ async fn docs_page(
     let video = crate::models::video::queries::get(&state.db, &auth, doc_id).await?;
     let aligned = align(&video);
     let images = video.images.unwrap_or_default();
-    println!("{:?}", images.removed);
     let removed = images.removed.iter().collect::<HashSet<_>>();
+
+    let next_read = !video.read;
 
     let body = html! {
         div .relative.w-full.overflow-y-auto
@@ -116,7 +136,14 @@ async fn docs_page(
                     h1 .text-3xl {
                         @if let Some(title) = &video.title { (title) }
                     }
-                    (doc_settings(video.id, video.read))
+
+                    div .flex.gap-4 {
+                        (mark_read_action_fragment(doc_id, next_read))
+
+                        a .btn.btn-outline href="/" {
+                            "Back to List"
+                        }
+                    }
                 }
 
                 label .flex.items-center.gap-2 {
@@ -160,7 +187,6 @@ async fn docs_page(
 
                 }
 
-                (doc_settings(video.id, video.read))
             }
 
             template x-if="large_image" {
@@ -192,8 +218,8 @@ pub fn create_routes() -> axum::Router<ServerState> {
     axum::Router::new()
         .route("/docs/:doc_id", routing::get(docs_page))
         .route(
-            "/docs/:doc_id/_action/image/:image_id",
-            routing::get(get_image_action)
-                .route_layer(has_any_permission(vec!["Video:read", "org_admin"])),
+            "/docs/:doc_id/_action/mark_read",
+            routing::post(mark_read_action)
+                .route_layer(has_any_permission(vec!["Video:write", "org_admin"])),
         )
 }

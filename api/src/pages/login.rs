@@ -109,7 +109,7 @@ fn login_page_form(
         .or_else(|| form["redirect_to"].as_str());
 
     html! {
-        ul.text-red-50 {
+        ul.text-error {
             @if !message.is_empty() {
                 li { (message) }
             }
@@ -121,14 +121,14 @@ fn login_page_form(
 
         input type="hidden" name="redirect_to" value=[redirect_to];
         div.flex.flex-col.gap-2 {
-            label .text-red-200 for="email" { "Email" }
+            label.label-text for="email" { "Email" }
             input #email .input.input-bordered required type="email" name="email" value=[form["email"].as_str()];
-            (errors.field_ul("email", "text-red-50"))
+            (errors.field_ul("email", "text-error"))
         }
         div.flex.flex-col.gap-2 {
-            label for="password" { "Password" }
+            label.label-text for="password" { "Password" }
             input #password .input.input-bordered type="password" name="password" autocomplete="off";
-            (errors.field_ul("password", "text-red-50"))
+            (errors.field_ul("password", "text-error"))
         }
         div.flex.gap-4 {
             button #login .btn.btn-primary { "Login" }

@@ -114,7 +114,7 @@ pub fn create_routes() -> axum::Router<ServerState> {
                 .route_layer(has_any_permission(vec!["Video:owner", "org_admin"])),
         )
         .route(
-            "/_action/videos/:id/mark_read",
+            "/_action/mark_read/:id",
             routing::post(mark_read_action)
                 .route_layer(has_any_permission(vec!["Video:write", "org_admin"])),
         )

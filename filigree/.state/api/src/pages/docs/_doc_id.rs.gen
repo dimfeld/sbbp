@@ -17,16 +17,22 @@ use crate::{
     Error,
 };
 
-fn get_image_action_fragment() -> Markup {
+#[derive(serde::Deserialize, serde::Serialize, Debug, JsonSchema)]
+pub struct MarkReadActionPayload {
+    pub read: bool,
+}
+
+fn mark_read_action_fragment() -> Markup {
     html! {}
 }
 
-async fn get_image_action(
+async fn mark_read_action(
     State(state): State<ServerState>,
     auth: Authed,
-    Path((doc_id, image_id)): Path<(crate::models::video::VideoId, String)>,
+    Path(doc_id): Path<crate::models::video::VideoId>,
+    form: Form<MarkReadActionPayload>,
 ) -> Result<impl IntoResponse, Error> {
-    let body = get_image_action_fragment();
+    let body = mark_read_action_fragment();
 
     Ok(body)
 }
@@ -45,8 +51,8 @@ pub fn create_routes() -> axum::Router<ServerState> {
     axum::Router::new()
         .route("/docs/:doc_id", routing::get(docs_page))
         .route(
-            "/docs/:doc_id/_action/image/:image_id",
-            routing::get(get_image_action)
-                .route_layer(has_any_permission(vec!["Video:read", "org_admin"])),
+            "/docs/:doc_id/_action/mark_read",
+            routing::post(mark_read_action)
+                .route_layer(has_any_permission(vec!["Video:write", "org_admin"])),
         )
 }

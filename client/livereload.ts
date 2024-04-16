@@ -3,7 +3,9 @@ import htmx from 'htmx.org';
 export function startLiveReload() {
   window.startLiveReload = startLiveReload;
   const sse = new EventSource('/__livereload_status');
+  let startTime = Date.now();
   sse.onerror = () => {
+    startTime = Date.now();
     sse.close();
     pollForLive();
   };
@@ -20,10 +22,13 @@ export function startLiveReload() {
         throw new Error('server still down');
       }
 
+      let endTime = Date.now();
       await htmx.ajax('GET', window.location.href, { target: 'body' }).catch((e) => {
         console.error('AJAX reload failed', e);
         window.location.reload();
       });
+
+      console.log(`Live reload took ${endTime - startTime}ms`);
 
       setTimeout(startLiveReload);
     } catch (e) {
