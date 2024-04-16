@@ -137,7 +137,7 @@ async fn serve(cmd: ServeCommand) -> Result<(), Report<Error>> {
 
     let tracing_config = filigree::tracing_config::create_tracing_config(
         "",
-        TracingProvider::Jaeger,
+        TracingProvider::OtlpTonic,
         Some("sbbp-api".to_string()),
         None,
     )

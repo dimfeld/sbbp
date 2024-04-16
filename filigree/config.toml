@@ -10,7 +10,7 @@ web_dir = "web"
 provider = "sentry"
 
 [tracing]
-provider = "jaeger"
+provider = "otlp_tonic"
 api_service_name = "sbbp-api"
 
 [secrets]
