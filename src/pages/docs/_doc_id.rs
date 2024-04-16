@@ -16,7 +16,7 @@ use schemars::JsonSchema;
 use crate::{
     auth::{has_any_permission, Authed},
     models::video::{Video, VideoId},
-    pages::{error::HtmlError, layout::root_layout_page},
+    pages::{auth::WebAuthed, error::HtmlError, layout::root_layout_page},
     server::ServerState,
     Error,
 };
@@ -109,7 +109,7 @@ fn align(video: &Video) -> Vec<ImageChunk> {
 
 async fn docs_page(
     State(state): State<ServerState>,
-    auth: Authed,
+    WebAuthed(auth): WebAuthed,
     Path(doc_id): Path<crate::models::video::VideoId>,
 ) -> Result<impl IntoResponse, HtmlError> {
     let video = crate::models::video::queries::get(&state.db, &auth, doc_id).await?;

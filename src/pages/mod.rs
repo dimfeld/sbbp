@@ -18,7 +18,7 @@ use schemars::JsonSchema;
 use crate::{
     auth::{has_any_permission, Authed},
     models::video::{self, VideoId, VideoListResult, VideoProcessingState},
-    pages::error::HtmlError,
+    pages::{auth::WebAuthed, error::HtmlError},
     server::ServerState,
     Error,
 };
@@ -311,7 +311,7 @@ pub struct HomeQuery {
 
 async fn home_page(
     State(state): State<ServerState>,
-    auth: Authed,
+    WebAuthed(auth): WebAuthed,
     Query(qs): Query<HomeQuery>,
     HxTrigger(trigger): HxTrigger,
 ) -> Result<impl IntoResponse, HtmlError> {
