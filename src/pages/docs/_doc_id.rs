@@ -194,7 +194,7 @@ async fn docs_page(
                     class="fixed inset-0 z-50"
                 {
                     img
-                        ":src"="'/api/videos/{doc_id}/image/' + large_image"
+                        ":src"=(format_args!("'/api/videos/{doc_id}/image/' + large_image"))
                         ":alt"="'Image ' + large_image";
                 }
             }

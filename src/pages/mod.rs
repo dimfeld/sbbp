@@ -1,6 +1,6 @@
 use std::fmt::Write;
 
-use axum::response::{Redirect, Response};
+use axum::response::Redirect;
 #[allow(unused_imports)]
 use axum::{
     extract::{Path, State},
@@ -10,14 +10,14 @@ use axum::{
 };
 use axum_extra::extract::{Form, Query};
 use axum_htmx::HxTrigger;
-use error_stack::{Report, ResultExt};
-use filigree::{extract::ValidatedForm, html::Svg};
+use error_stack::Report;
+use filigree::html::Svg;
 use maud::{html, Markup, Render};
 use schemars::JsonSchema;
 
 use crate::{
     auth::{has_any_permission, Authed},
-    models::video::{self, Video, VideoId, VideoListResult, VideoProcessingState},
+    models::video::{self, VideoId, VideoListResult, VideoProcessingState},
     pages::error::HtmlError,
     server::ServerState,
     Error,
@@ -242,6 +242,7 @@ fn video_row_fragment(video: &VideoListResult, unread_only: bool) -> Markup {
                                 button flex.gap-2.justify-start
                                     type="button"
                                     hx-delete={"/_action/videos/" (video.id)}
+                                    hx-confirm={"Are you sure you want to delete '" (video.title.as_deref().unwrap_or_default()) "'?"}
                                     hx-target={"#row-" (video.id)}
                                     hx-swap="delete"
                                     "@click"="open = false"
