@@ -39,7 +39,7 @@ async fn mark_read_action(
 
 async fn docs_page(
     State(state): State<ServerState>,
-    WebAuthed(auth): WebAuthed,
+    auth: WebAuthed,
     Path(doc_id): Path<crate::models::video::VideoId>,
 ) -> Result<impl IntoResponse, HtmlError> {
     let body = html! {};

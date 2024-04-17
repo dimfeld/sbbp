@@ -261,7 +261,7 @@ fn video_row_fragment(video: &VideoListResult, unread_only: bool) -> Markup {
 
 async fn video_list(
     state: &ServerState,
-    auth: &Authed,
+    auth: &WebAuthed,
     unread_only: bool,
 ) -> Result<Markup, Report<Error>> {
     let videos = crate::models::video::queries::list(
@@ -311,7 +311,7 @@ pub struct HomeQuery {
 
 async fn home_page(
     State(state): State<ServerState>,
-    WebAuthed(auth): WebAuthed,
+    auth: WebAuthed,
     Query(qs): Query<HomeQuery>,
     HxTrigger(trigger): HxTrigger,
 ) -> Result<impl IntoResponse, HtmlError> {

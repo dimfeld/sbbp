@@ -120,7 +120,7 @@ pub struct HomeQuery {
 
 async fn home_page(
     State(state): State<ServerState>,
-    WebAuthed(auth): WebAuthed,
+    auth: WebAuthed,
     Query(qs): Query<HomeQuery>,
 ) -> Result<impl IntoResponse, HtmlError> {
     let body = html! {};

@@ -109,7 +109,7 @@ fn align(video: &Video) -> Vec<ImageChunk> {
 
 async fn docs_page(
     State(state): State<ServerState>,
-    WebAuthed(auth): WebAuthed,
+    auth: WebAuthed,
     Path(doc_id): Path<crate::models::video::VideoId>,
 ) -> Result<impl IntoResponse, HtmlError> {
     let video = crate::models::video::queries::get(&state.db, &auth, doc_id).await?;
