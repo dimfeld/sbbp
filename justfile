@@ -1,6 +1,10 @@
 _list:
   @just --list
 
+run:
+  cd web && bun run build
+  cargo run --release serve
+
 filigree:
   ../filigree/target/debug/filigree write
 
