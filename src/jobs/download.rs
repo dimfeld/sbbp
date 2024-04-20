@@ -69,6 +69,7 @@ async fn run(job: RunningJob, state: ServerState) -> Result<(), error_stack::Rep
 
     let download_process = tokio::process::Command::new("yt-dlp")
         .args([
+            "--no-playlist",
             "--write-info-json",
             "--output",
             video_path_template.to_string_lossy().as_ref(),

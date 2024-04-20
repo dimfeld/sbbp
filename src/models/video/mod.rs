@@ -51,7 +51,7 @@ pub async fn create_via_url(
         ($1, $2, $3, $4, '{}'::jsonb)",
         id.as_uuid(),
         auth.organization_id.as_uuid(),
-        VideoProcessingState::Processing as _,
+        VideoProcessingState::Queued as _,
         url
     )
     .execute(&state.db)

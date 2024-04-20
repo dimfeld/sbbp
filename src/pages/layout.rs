@@ -4,7 +4,6 @@ use filigree::vite_manifest::{watch::ManifestWatcher, Manifest, ManifestError};
 use maud::{html, Markup, DOCTYPE};
 
 use super::auth::WebAuthed;
-use crate::auth::Authed;
 
 pub static MANIFEST: Manifest = Manifest::new();
 
