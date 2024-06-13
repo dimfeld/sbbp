@@ -91,7 +91,7 @@ async fn delete_video_action(
     auth: Authed,
     Path(id): Path<VideoId>,
 ) -> Result<impl IntoResponse, Error> {
-    video::queries::delete(&state.db, &auth, id).await?;
+    video::queries::delete(&state.db, &auth, &id).await?;
     Ok("")
 }
 

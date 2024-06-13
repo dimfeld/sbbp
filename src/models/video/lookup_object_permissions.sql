@@ -9,7 +9,7 @@ SELECT
     NULL
   END _permission
 FROM
-  permissions
+  public.permissions
 WHERE
   organization_id = $1
   AND actor_id = ANY ($2)

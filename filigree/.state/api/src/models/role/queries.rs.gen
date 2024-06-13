@@ -28,7 +28,7 @@ type QueryAs<'q, T> = sqlx::query::QueryAs<
 pub async fn get(
     db: impl PgExecutor<'_>,
     auth: &AuthInfo,
-    id: RoleId,
+    id: &RoleId,
 ) -> Result<Role, error_stack::Report<Error>> {
     let actor_ids = auth.actor_ids();
     let object = query_file_as!(
@@ -234,7 +234,7 @@ pub async fn create(
 
     let id = RoleId::new();
 
-    create_raw(&mut *db, id, auth.organization_id, payload).await
+    create_raw(&mut *db, &id, &auth.organization_id, payload).await
 }
 
 /// Create a new Role in the database, allowing the ID to be explicitly specified
@@ -242,8 +242,8 @@ pub async fn create(
 #[instrument(skip(db))]
 pub async fn create_raw(
     db: &mut PgConnection,
-    id: RoleId,
-    organization_id: OrganizationId,
+    id: &RoleId,
+    organization_id: &OrganizationId,
     payload: RoleCreatePayload,
 ) -> Result<RoleCreateResult, error_stack::Report<Error>> {
     let result = query_file_as!(
@@ -265,7 +265,7 @@ pub async fn create_raw(
 pub async fn update(
     db: &mut PgConnection,
     auth: &AuthInfo,
-    id: RoleId,
+    id: &RoleId,
     payload: RoleUpdatePayload,
 ) -> Result<bool, error_stack::Report<Error>> {
     let actor_ids = auth.actor_ids();
@@ -292,7 +292,7 @@ pub async fn update(
 pub async fn delete(
     db: impl PgExecutor<'_>,
     auth: &AuthInfo,
-    id: RoleId,
+    id: &RoleId,
 ) -> Result<bool, error_stack::Report<Error>> {
     let actor_ids = auth.actor_ids();
     let result = query_file!(
@@ -311,7 +311,7 @@ pub async fn delete(
 pub async fn lookup_object_permissions(
     db: impl PgExecutor<'_>,
     auth: &AuthInfo,
-    #[allow(unused_variables)] id: RoleId,
+    #[allow(unused_variables)] id: &RoleId,
 ) -> Result<Option<ObjectPermission>, error_stack::Report<Error>> {
     let actor_ids = auth.actor_ids();
     let result = query_file_scalar!(

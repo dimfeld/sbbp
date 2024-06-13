@@ -8,7 +8,7 @@ SELECT
   avatar_url,
   _permission AS "_permission!: filigree::auth::ObjectPermission"
 FROM
-  users tb
+  public.users tb
   JOIN LATERAL (
     SELECT
       CASE WHEN bool_or(permission IN ('org_admin', 'User::owner')) THEN
@@ -21,7 +21,7 @@ FROM
         NULL
       END _permission
     FROM
-      permissions
+      public.permissions
     WHERE
       organization_id = $2
       AND actor_id = ANY ($3)

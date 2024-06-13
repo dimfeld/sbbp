@@ -7,7 +7,7 @@ SELECT
   description,
   perm._permission
 FROM
-  roles tb
+  public.roles tb
   JOIN LATERAL (
     SELECT
       CASE WHEN bool_or(permission IN ('org_admin', 'Role::owner')) THEN
@@ -20,7 +20,7 @@ FROM
         NULL
       END _permission
     FROM
-      permissions
+      public.permissions
     WHERE
       organization_id = $1
       AND actor_id = ANY ($2)

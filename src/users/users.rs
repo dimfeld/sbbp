@@ -79,9 +79,10 @@ impl UserCreator {
     pub async fn create_user(
         tx: &mut PgConnection,
         add_to_organization: Option<OrganizationId>,
+        user_id: Option<UserId>,
         details: CreateUserDetails,
     ) -> Result<(UserId, OrganizationId), Report<UserCreatorError>> {
-        let user_id = UserId::new();
+        let user_id = user_id.unwrap_or_else(|| UserId::new());
         let organization_fut = async {
             match add_to_organization {
                 Some(organization_id) => {
@@ -164,7 +165,7 @@ impl filigree::users::users::UserCreator for UserCreator {
         add_to_organization: Option<OrganizationId>,
         details: CreateUserDetails,
     ) -> Result<UserId, Report<UserCreatorError>> {
-        Self::create_user(tx, add_to_organization, details)
+        Self::create_user(tx, add_to_organization, None, details)
             .await
             .map(|(user_id, _)| user_id)
     }
@@ -184,7 +185,7 @@ async fn get_current_user_endpoint(
 ) -> Result<impl IntoResponse, Error> {
     // TODO This should be a more custom query, include organization info and permissions
     // and such, and work even if the user doesn't have the User:read permission.
-    let user = crate::models::user::queries::get(&state.db, &authed, authed.user_id).await?;
+    let user = crate::models::user::queries::get(&state.db, &authed, &authed.user_id).await?;
 
     let user = SelfUser {
         user,
@@ -203,7 +204,7 @@ async fn update_current_user_endpoint(
     // TODO Need a query specifically for updating self
     let mut tx = state.db.begin().await.change_context(Error::Db)?;
     let updated =
-        crate::models::user::queries::update(&mut *tx, &authed, authed.user_id, body).await?;
+        crate::models::user::queries::update(&mut *tx, &authed, &authed.user_id, body).await?;
     tx.commit().await.change_context(Error::Db)?;
 
     let status = if updated {

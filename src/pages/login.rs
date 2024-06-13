@@ -8,11 +8,8 @@ use axum_extra::extract::Query;
 use axum_htmx::{HxLocation, HxPushUrl, HxRetarget, HxTarget, HxTrigger};
 use error_stack::ResultExt;
 use filigree::{
-    auth::password::{login_with_password, EmailAndPassword},
-    error_reporting::HandleErrorReport,
-    errors::HttpError,
-    extract::{FormOrJson, ValidatedForm},
-    html::HtmlList,
+    auth::EmailAndPassword, error_reporting::HandleErrorReport, errors::HttpError,
+    extract::ValidatedForm, html::HtmlList,
 };
 use maud::{html, Markup};
 use schemars::JsonSchema;

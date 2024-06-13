@@ -4,7 +4,7 @@ use filigree::{
     auth::{CorsSetting, SameSiteArg, SessionCookieBuilder},
     tracing_config::{configure_tracing, teardown_tracing, TracingProvider},
 };
-use sbbp_api::{cmd, db, emails, server, Error};
+use sbbp_api::{cmd, emails, server, Error};
 use tracing::{event, Level};
 
 #[derive(Parser)]
@@ -17,6 +17,7 @@ struct Cli {
 #[derive(Debug, Subcommand)]
 enum Command {
     Util(cmd::util::UtilCommand),
+
     Db(cmd::db::DbCommand),
     Serve(ServeCommand),
 }
@@ -137,6 +138,7 @@ async fn serve(cmd: ServeCommand) -> Result<(), Report<Error>> {
 
     let tracing_config = filigree::tracing_config::create_tracing_config(
         "",
+        "",
         TracingProvider::OtlpTonic,
         Some("sbbp-api".to_string()),
         None,
@@ -163,7 +165,7 @@ async fn serve(cmd: ServeCommand) -> Result<(), Report<Error>> {
 
     let pg_pool = pg_pool.change_context(Error::Db)?;
 
-    db::run_migrations(&pg_pool).await?;
+    sbbp_api::db::run_migrations(&pg_pool).await?;
 
     let secure_cookies = !cmd.insecure;
 
@@ -190,6 +192,7 @@ async fn serve(cmd: ServeCommand) -> Result<(), Report<Error>> {
     let frontend_asset_dir = cmd
         .frontend_asset_dir
         .or_else(|| Some("web/build".to_string()));
+
     let vite_manifest = cmd.vite_manifest.or_else(|| {
         frontend_asset_dir
             .as_ref()
@@ -202,6 +205,7 @@ async fn serve(cmd: ServeCommand) -> Result<(), Report<Error>> {
         serve_frontend: server::ServeFrontend {
             port: cmd.frontend_port,
             path: frontend_asset_dir,
+
             vite_manifest,
             watch_vite_manifest: cmd.dev,
             livereload: cmd.dev,
@@ -216,6 +220,7 @@ async fn serve(cmd: ServeCommand) -> Result<(), Report<Error>> {
         hosts,
         api_cors: cmd.api_cors,
         obfuscate_errors: cmd.obfuscate_errors,
+
         // This will build OAuth providers based on the environment variables present.
         oauth_providers: None,
         oauth_redirect_url_base: oauth_redirect_host,
@@ -226,6 +231,7 @@ async fn serve(cmd: ServeCommand) -> Result<(), Report<Error>> {
             same_org_invites_require_email_verification: cmd
                 .same_org_invites_require_email_verification,
         },
+
         pg_pool,
         secrets: server::Secrets::from_env()?,
         queue_path: std::path::PathBuf::from(cmd.queue_path),
@@ -281,6 +287,7 @@ pub async fn actual_main() -> Result<(), Report<Error>> {
     match cli.command {
         Command::Db(cmd) => cmd.handle().await?,
         Command::Serve(cmd) => serve(cmd).await?,
+
         Command::Util(cmd) => cmd.handle().await?,
     }
 

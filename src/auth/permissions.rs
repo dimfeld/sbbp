@@ -12,19 +12,19 @@ pub struct PermissionInfo {
 
 pub const PERMISSIONS: &[PermissionInfo] = &[
     PermissionInfo {
-        name: "Read Users",
-        description: "List and read User objects",
-        key: "User::read",
+        name: "Read Roles",
+        description: "List and read Role objects",
+        key: "Role::read",
     },
     PermissionInfo {
-        name: "Write Users",
-        description: "Write User objects",
-        key: "User::write",
+        name: "Write Roles",
+        description: "Write Role objects",
+        key: "Role::write",
     },
     PermissionInfo {
-        name: "Administer Users",
-        description: "Create and delete User objects",
-        key: "User::owner",
+        name: "Administer Roles",
+        description: "Create and delete Role objects",
+        key: "Role::owner",
     },
     PermissionInfo {
         name: "Read Organizations",
@@ -42,19 +42,19 @@ pub const PERMISSIONS: &[PermissionInfo] = &[
         key: "Organization::owner",
     },
     PermissionInfo {
-        name: "Read Roles",
-        description: "List and read Role objects",
-        key: "Role::read",
+        name: "Read Users",
+        description: "List and read User objects",
+        key: "User::read",
     },
     PermissionInfo {
-        name: "Write Roles",
-        description: "Write Role objects",
-        key: "Role::write",
+        name: "Write Users",
+        description: "Write User objects",
+        key: "User::write",
     },
     PermissionInfo {
-        name: "Administer Roles",
-        description: "Create and delete Role objects",
-        key: "Role::owner",
+        name: "Administer Users",
+        description: "Create and delete User objects",
+        key: "User::owner",
     },
     PermissionInfo {
         name: "Read Videos",

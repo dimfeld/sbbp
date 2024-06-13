@@ -31,7 +31,7 @@ async fn get(
     auth: Authed,
     Path(id): Path<RoleId>,
 ) -> Result<impl IntoResponse, Error> {
-    let object = queries::get(&state.db, &auth, id).await?;
+    let object = queries::get(&state.db, &auth, &id).await?;
 
     Ok(Json(object))
 }
@@ -66,7 +66,7 @@ async fn update(
 ) -> Result<impl IntoResponse, Error> {
     let mut tx = state.db.begin().await.change_context(Error::Db)?;
 
-    let result = queries::update(&mut *tx, &auth, id, payload).await?;
+    let result = queries::update(&mut *tx, &auth, &id, payload).await?;
 
     tx.commit().await.change_context(Error::Db)?;
 
@@ -84,7 +84,7 @@ async fn delete(
 ) -> Result<impl IntoResponse, Error> {
     let mut tx = state.db.begin().await.change_context(Error::Db)?;
 
-    let deleted = queries::delete(&mut *tx, &auth, id).await?;
+    let deleted = queries::delete(&mut *tx, &auth, &id).await?;
 
     if !deleted {
         return Ok(StatusCode::NOT_FOUND);
@@ -151,9 +151,10 @@ mod test {
             let id = RoleId::new();
             event!(Level::INFO, %id, "Creating test object {}", i);
             let payload = make_create_payload(i);
-            let result = super::queries::create_raw(&mut *tx, id, organization_id, payload.clone())
-                .await
-                .expect("Creating test object failed");
+            let result =
+                super::queries::create_raw(&mut *tx, &id, &organization_id, payload.clone())
+                    .await
+                    .expect("Creating test object failed");
 
             objects.push((payload, result));
         }

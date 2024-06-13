@@ -8,7 +8,7 @@ SELECT
   avatar_url,
   perm._permission
 FROM
-  users tb
+  public.users tb
   JOIN LATERAL (
     SELECT
       CASE WHEN bool_or(permission IN ('org_admin', 'User::owner')) THEN
@@ -21,7 +21,7 @@ FROM
         NULL
       END _permission
     FROM
-      permissions
+      public.permissions
     WHERE
       organization_id = $1
       AND actor_id = ANY ($2)

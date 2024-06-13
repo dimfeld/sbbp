@@ -1,11 +1,11 @@
-DELETE FROM videos
+DELETE FROM public.videos
 WHERE id = $1
   AND organization_id = $2
   AND EXISTS (
     SELECT
       1
     FROM
-      permissions
+      public.permissions
     WHERE
       organization_id = $2
       AND actor_id = ANY ($3)

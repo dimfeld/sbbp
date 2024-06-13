@@ -23,10 +23,10 @@ use tower_http::{
     compression::CompressionLayer,
     cors::CorsLayer,
     timeout::TimeoutLayer,
-    trace::{DefaultOnFailure, DefaultOnRequest, DefaultOnResponse, TraceLayer},
+    trace::{DefaultOnFailure, DefaultOnRequest, TraceLayer},
     ServiceBuilderExt,
 };
-use tracing::{event, Level};
+use tracing::{event, Level, Span};
 
 use crate::{error::Error, storage};
 
@@ -155,7 +155,8 @@ pub struct Server {
     pub listener: tokio::net::TcpListener,
     pub queue_workers: crate::jobs::QueueWorkers,
     /// Vite manifest watcher for replacing web builds at runtime
-    manifest_watcher: Option<filigree::vite_manifest::watch::ManifestWatcher>,
+    /// We don't do anything with this here, but need to keep a reference to it.
+    _manifest_watcher: Option<filigree::vite_manifest::watch::ManifestWatcher>,
 }
 
 impl Server {
@@ -242,8 +243,6 @@ pub struct Config {
     pub cookie_configuration: SessionCookieBuilder,
     /// When user sessions should expire.
     pub session_expiry: ExpiryStyle,
-    /// Flags controlling how new users are able to sign up or be invited.
-    pub new_user_flags: filigree::server::NewUserFlags,
     /// The email sending service to use.
     pub email_sender: filigree::email::services::EmailSender,
 
@@ -254,6 +253,8 @@ pub struct Config {
     pub hosts: Vec<String>,
     pub api_cors: filigree::auth::CorsSetting,
 
+    /// Flags controlling how new users are able to sign up or be invited.
+    pub new_user_flags: filigree::server::NewUserFlags,
     /// The base URL for OAuth redirect URLs.
     pub oauth_redirect_url_base: String,
     /// Set the OAuth providers. If this is None, OAuth providers will be configured based on the
@@ -289,6 +290,7 @@ pub async fn create_server(config: Config) -> Result<Server, Report<Error>> {
         .attach_printable("Unable to parse hosts list")?;
 
     let oauth_redirect_base = format!("{}/auth/oauth/login", config.oauth_redirect_url_base);
+
     let http_client = reqwest::Client::builder()
         .user_agent("SBBP")
         .build()
@@ -304,7 +306,6 @@ pub async fn create_server(config: Config) -> Result<Server, Report<Error>> {
             http_client,
             db: config.pg_pool.clone(),
             email: config.email_sender,
-            new_user_flags: config.new_user_flags,
             hosts: config.hosts,
             user_creator: Box::new(crate::users::users::UserCreator),
             oauth_providers: config.oauth_providers.unwrap_or_else(|| {
@@ -313,6 +314,7 @@ pub async fn create_server(config: Config) -> Result<Server, Report<Error>> {
                     &oauth_redirect_base,
                 )
             }),
+            new_user_flags: config.new_user_flags,
             session_backend: SessionBackend::new(
                 config.pg_pool.clone(),
                 config.cookie_configuration,
@@ -432,6 +434,7 @@ pub async fn create_server(config: Config) -> Result<Server, Report<Error>> {
                     .make_span_with(|req: &axum::extract::Request| {
                         let method = req.method();
                         let uri = req.uri();
+                        let host = req.headers().get("host").and_then(|s| s.to_str().ok());
 
                         // Add the matched route to the span
                         let route = req
@@ -445,13 +448,31 @@ pub async fn create_server(config: Config) -> Result<Server, Report<Error>> {
                             .and_then(|s| s.to_str().ok())
                             .unwrap_or("");
 
-                        tracing::info_span!("request", ?request_id, %method, %uri, route)
+                        let span = tracing::info_span!("request",
+                            request_id,
+                            http.host=host,
+                            http.method=%method,
+                            http.uri=%uri,
+                            http.route=route,
+                            http.status_code = tracing::field::Empty,
+                            error = tracing::field::Empty
+                        );
+
+                        span
                     })
-                    .on_response(
-                        DefaultOnResponse::new()
-                            .level(Level::INFO)
-                            .latency_unit(tower_http::LatencyUnit::Millis),
-                    )
+                    .on_response(|res: &http::Response<_>, latency: Duration, span: &Span| {
+                        let status = res.status();
+                        span.record("http.status_code", status.as_u16());
+                        if status.is_client_error() || status.is_server_error() {
+                            span.record("error", "true");
+                        }
+
+                        tracing::info!(
+                            latency = %format!("{} ms", latency.as_millis()),
+                            http.status_code = status.as_u16(),
+                            "finished processing request"
+                        );
+                    })
                     .on_request(DefaultOnRequest::new().level(Level::INFO))
                     .on_failure(DefaultOnFailure::new().level(Level::ERROR)),
             )
@@ -500,7 +521,7 @@ pub async fn create_server(config: Config) -> Result<Server, Report<Error>> {
         app,
         state,
         listener,
-        manifest_watcher,
+        _manifest_watcher: manifest_watcher,
         queue_workers,
     })
 }

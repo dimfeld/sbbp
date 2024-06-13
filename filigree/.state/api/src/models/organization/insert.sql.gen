@@ -1,4 +1,4 @@
-INSERT INTO organizations (
+INSERT INTO public.organizations (
   id,
   name,
   OWNER,

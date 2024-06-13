@@ -16,7 +16,7 @@ SELECT
   processed_path,
   perm._permission
 FROM
-  videos tb
+  public.videos tb
   JOIN LATERAL (
     SELECT
       CASE WHEN bool_or(permission IN ('org_admin', 'Video::owner')) THEN
@@ -29,7 +29,7 @@ FROM
         NULL
       END _permission
     FROM
-      permissions
+      public.permissions
     WHERE
       organization_id = $1
       AND actor_id = ANY ($2)

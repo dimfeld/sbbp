@@ -5,7 +5,7 @@ use axum::{
     routing,
 };
 use filigree::{
-    auth::password::{login_with_password, EmailAndPassword},
+    auth::{password::login_with_password, EmailAndPassword},
     extract::FormOrJson,
 };
 use maud::html;

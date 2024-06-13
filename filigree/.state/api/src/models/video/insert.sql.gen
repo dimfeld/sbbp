@@ -1,4 +1,4 @@
-INSERT INTO videos (
+INSERT INTO public.videos (
   id,
   organization_id,
   title,

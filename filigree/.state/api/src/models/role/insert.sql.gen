@@ -1,4 +1,4 @@
-INSERT INTO roles (
+INSERT INTO public.roles (
   id,
   organization_id,
   name,

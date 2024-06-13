@@ -112,7 +112,7 @@ async fn docs_page(
     auth: WebAuthed,
     Path(doc_id): Path<crate::models::video::VideoId>,
 ) -> Result<impl IntoResponse, HtmlError> {
-    let video = crate::models::video::queries::get(&state.db, &auth, doc_id).await?;
+    let video = crate::models::video::queries::get(&state.db, &auth, &doc_id).await?;
     let aligned = align(&video);
     let images = video.images.unwrap_or_default();
     let removed = images.removed.iter().collect::<HashSet<_>>();

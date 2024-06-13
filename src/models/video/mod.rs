@@ -80,7 +80,7 @@ pub async fn rerun_stage(
     id: VideoId,
     stage: &str,
 ) -> Result<Uuid, Error> {
-    let video = queries::get(&state.db, auth, id).await?;
+    let video = queries::get(&state.db, auth, &id).await?;
     let storage_prefix = video.id.to_string();
 
     let result = match stage {

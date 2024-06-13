@@ -14,12 +14,12 @@ use crate::{
 
 const ADMIN_DEFAULT_PERMISSIONS: &[&str] = &["org_admin"];
 const USER_DEFAULT_PERMISSIONS: &[&str] = &[
-    "User::read",
-    "User::write",
-    "Organization::read",
-    "Organization::write",
     "Role::read",
     "Role::write",
+    "Organization::read",
+    "Organization::write",
+    "User::read",
+    "User::write",
     "Video::read",
     "Video::write",
 ];
@@ -56,7 +56,7 @@ pub async fn create_new_organization(
         ..Default::default()
     };
 
-    let new_org = organization::queries::create_raw(&mut *db, org_id, org_id, new_org).await?;
+    let new_org = organization::queries::create_raw(&mut *db, &org_id, &org_id, new_org).await?;
 
     add_user_to_organization(&mut *db, org_id, owner)
         .await
@@ -74,8 +74,8 @@ pub async fn create_new_organization(
         description: None,
     };
 
-    role::queries::create_raw(&mut *db, admin_role_id, org_id, admin_role).await?;
-    role::queries::create_raw(&mut *db, user_role_id, org_id, user_role).await?;
+    role::queries::create_raw(&mut *db, &admin_role_id, &org_id, admin_role).await?;
+    role::queries::create_raw(&mut *db, &user_role_id, &org_id, user_role).await?;
     add_roles_to_user(&mut *db, org_id, owner, &[admin_role_id, user_role_id])
         .await
         .change_context(Error::Db)?;

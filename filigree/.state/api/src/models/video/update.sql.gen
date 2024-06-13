@@ -3,13 +3,13 @@ WITH permissions AS (
     COALESCE(bool_or(permission IN ('org_admin', 'Video::owner')), FALSE) AS is_owner,
     COALESCE(bool_or(permission IN ('org_admin', 'Video::owner', 'Video::write')), FALSE) AS is_user
   FROM
-    permissions
+    public.permissions
   WHERE
     organization_id = $2
     AND actor_id = ANY ($3)
     AND permission IN ('org_admin', 'Video::owner', 'Video::write'))
 UPDATE
-  videos
+  public.videos
 SET
   title = CASE WHEN permissions.is_owner THEN
     $4
