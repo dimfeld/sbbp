@@ -1,5 +1,5 @@
 {
-  "name": "sbbp_api-web",
+  "name": "sbbp-web",
   "module": "src/index.ts",
   "private": true,
   "type": "module",

@@ -3969,7 +3969,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "sbbp-api"
+name = "sbbp"
 version = "0.1.0"
 dependencies = [
  "async-trait",

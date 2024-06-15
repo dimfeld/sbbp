@@ -4,7 +4,7 @@ use filigree::{
     auth::{CorsSetting, SameSiteArg, SessionCookieBuilder},
     tracing_config::{configure_tracing, teardown_tracing, TracingProvider},
 };
-use sbbp_api::{cmd, emails, server, Error};
+use sbbp::{cmd, emails, server, Error};
 use tracing::{event, Level};
 
 #[derive(Parser)]
@@ -140,7 +140,7 @@ async fn serve(cmd: ServeCommand) -> Result<(), Report<Error>> {
         "",
         "",
         TracingProvider::OtlpTonic,
-        Some("sbbp-api".to_string()),
+        Some("sbbp".to_string()),
         None,
     )
     .change_context(Error::ServerStart)?;
@@ -165,7 +165,7 @@ async fn serve(cmd: ServeCommand) -> Result<(), Report<Error>> {
 
     let pg_pool = pg_pool.change_context(Error::Db)?;
 
-    sbbp_api::db::run_migrations(&pg_pool).await?;
+    sbbp::db::run_migrations(&pg_pool).await?;
 
     let secure_cookies = !cmd.insecure;
 
@@ -236,7 +236,7 @@ async fn serve(cmd: ServeCommand) -> Result<(), Report<Error>> {
         secrets: server::Secrets::from_env()?,
         queue_path: std::path::PathBuf::from(cmd.queue_path),
         init_recurring_jobs: true,
-        storage: sbbp_api::storage::AppStorageConfig::new().change_context(Error::ServerStart)?,
+        storage: sbbp::storage::AppStorageConfig::new().change_context(Error::ServerStart)?,
     })
     .await?;
 

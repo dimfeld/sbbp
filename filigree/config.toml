@@ -8,7 +8,7 @@ provider = "sentry"
 
 [tracing]
 provider = "otlp_tonic"
-api_service_name = "sbbp-api"
+api_service_name = "sbbp"
 
 [secrets]
 deepgram = "DEEPGRAM_API_KEY"
